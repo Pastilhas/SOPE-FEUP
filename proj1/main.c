@@ -1,10 +1,9 @@
-/*
- *  Operative Systems Project
- *  by Joao Campos
- *     Diogo Sousa
- *     José Martins
+/* Operative Systems Project
+ * by Joao Campos
+ *    Diogo Sousa
+ *    José Martins
  *
- *  18/03/2019
+ * 18/03/2019
  */
 
 /* Objetivos:
@@ -24,9 +23,18 @@
  * [-v]   gerar log files
  */
 
+#include <dirent.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
+
+void dir_info(char* dirname);
+void file_info(char* filename);
+void get_stat(struct stat* info, char* filename);
 
 int main(int argc, char** argv) {
   // forensic file
@@ -59,5 +67,26 @@ int main(int argc, char** argv) {
       write(STDOUT_FILENO, "Too many arguments.\n", 20);
     }
     _exit(argc);
+  }
+
+  char* log_name = getenv("LOGFILENAME");
+  char* file_name = argv[argc - 1];
+
+  return 0;
+}
+
+void dir_info(char* dirname) {
+  DIR* dir_ptr;           // pointer to directory
+  struct dirent* dirent;  // pointer to entry
+}
+
+void file_info(char* filename) {
+  struct stat info;
+  get_stat(&info, filename);
+}
+
+void get_stat(struct stat* info, char* filename) {
+  if (stat(filename, info)) {
+    perror(filename);
   }
 }
