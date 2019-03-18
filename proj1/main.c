@@ -30,15 +30,34 @@
 
 int main(int argc, char** argv) {
   switch (argc) {
-    case 2:
+    case 2:     // forensic file
       break;
-    case 3:
+    case 3:     // forensic -r [file]
+                // forensic -v [file]
+
       break;
-    case 4:
+    case 4:     // forensic -r -v [file]
+                // forensic -h [type] [file]
+                // forensic -o [file] [file]
+
       break;
-    case 5:
+    case 5:     // forensic -r -h [type] [file]
+                // forensic -h [type] -v [file]
+                // forensic -r -o [file] [file]
+                // forensic -o [file] -h [file]
+
       break;
-    case 6:
+    case 6:     // forensic -r -h [type] -v [file]
+                // forensic -r -o [file] -v [file]
+                // forensic -h [type] -o [file] [file]
+
+      break;
+    case 7:     // forensic -r -h [type] -o [file] [file]
+                // forensic -h [type] -o [file] -v [file]
+                
+      break;
+    case 8:     // forensic -r -h [type] -o [file] -v [file]
+
       break;
     default:
       if (argc < 2) {
