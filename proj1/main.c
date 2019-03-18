@@ -29,45 +29,35 @@
 #include <unistd.h>
 
 int main(int argc, char** argv) {
-  switch (argc) {
-    case 2:     // forensic file
-      break;
-    case 3:     // forensic -r [file]
-                // forensic -v [file]
+  // forensic file
 
-      break;
-    case 4:     // forensic -r -v [file]
-                // forensic -h [type] [file]
-                // forensic -o [file] [file]
+  // forensic -r [file]
+  // forensic -v [file]
 
-      break;
-    case 5:     // forensic -r -h [type] [file]
-                // forensic -h [type] -v [file]
-                // forensic -r -o [file] [file]
-                // forensic -o [file] -h [file]
+  // forensic -r -v [file]
+  // forensic -h [type] [file]
+  // forensic -o [file] [file]
 
-      break;
-    case 6:     // forensic -r -h [type] -v [file]
-                // forensic -r -o [file] -v [file]
-                // forensic -h [type] -o [file] [file]
+  // forensic -r -h [type] [file]
+  // forensic -h [type] -v [file]
+  // forensic -r -o [file] [file]
+  // forensic -o [file] -h [file]
 
-      break;
-    case 7:     // forensic -r -h [type] -o [file] [file]
-                // forensic -h [type] -o [file] -v [file]
-                
-      break;
-    case 8:     // forensic -r -h [type] -o [file] -v [file]
+  // forensic -r -h [type] -v [file]
+  // forensic -r -o [file] -v [file]
+  // forensic -h [type] -o [file] [file]
 
-      break;
-    default:
-      if (argc < 2) {
-        write(STDOUT_FILENO, "Not enough arguments.\n", 22);
-      } else {
-        write(STDOUT_FILENO, "Too many arguments.\n", 20);
-      }
+  // forensic -r -h [type] -o [file] [file]
+  // forensic -h [type] -o [file] -v [file]
 
-      _exit(argc);
+  // forensic -r -h [type] -o [file] -v [file]
+
+  if (argc < 2 || argc > 8) {
+    if (argc < 2) {
+      write(STDOUT_FILENO, "Not enough arguments.\n", 22);
+    } else {
+      write(STDOUT_FILENO, "Too many arguments.\n", 20);
+    }
+    _exit(argc);
   }
-
-  return 0;
 }
