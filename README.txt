@@ -1,0 +1,1 @@
+Respositório para os trabalhos para a unidade curricular de SOPE (Sistemas Operativos)
