@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
     } else {
       write(STDOUT_FILENO, "Too many arguments.\n", 20);
     }
-    _exit(argc);
+    exit(argc);
   }
 
   char* log_name = getenv("LOGFILENAME");
@@ -84,7 +84,20 @@ void dir_info(char* dirname) {
   } else {
     dirent = readdir(dir_ptr);
     while (dirent != NULL) {
-      file_info(dirname, dirent->d_name);
+      // Allocate memory for file path
+      char* filename =
+          (char*)malloc(strlen(dirname) + strlen(dirent->d_name) + 2);
+      if (filename != NULL) {
+        // Create path to file   dir/filename
+        strcpy(filename, dirname);
+        strcat(filename, "/");
+        strcat(filename, dirent->d_name);
+        file_info(filename, dirent->d_name);
+        free(filename);
+      } else {
+        write(STDOUT_FILENO, "Failed to create file path.\n", 28);
+        exit(-1);
+      }
 
       dirent = readdir(dir_ptr);
     }
@@ -95,10 +108,6 @@ void dir_info(char* dirname) {
 void file_info(char* filename, char* d_name) {
   struct stat info;
   get_stat(&info, filename, d_name);
-
-  printf("");
-
-
 }
 
 void get_stat(struct stat* info, char* filename, char* d_name) {
