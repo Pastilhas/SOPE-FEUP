@@ -33,8 +33,8 @@
 #include <unistd.h>
 
 void dir_info(char* dirname);
-void file_info(char* filename);
-void get_stat(struct stat* info, char* filename);
+void file_info(char* filename, char* d_name);
+void get_stat(struct stat* info, char* filename, char* d_name);
 
 int main(int argc, char** argv) {
   // forensic file
@@ -76,17 +76,33 @@ int main(int argc, char** argv) {
 }
 
 void dir_info(char* dirname) {
-  DIR* dir_ptr;           // pointer to directory
-  struct dirent* dirent;  // pointer to entry
+  DIR* dir_ptr = opendir(dirname);  // pointer to directory
+  struct dirent* dirent;            // pointer to entry
+
+  if (dir_ptr == NULL) {  // Fail to open directory
+    write(STDOUT_FILENO, "Cannot open.\n", 13);
+  } else {
+    dirent = readdir(dir_ptr);
+    while (dirent != NULL) {
+      file_info(dirname, dirent->d_name);
+
+      dirent = readdir(dir_ptr);
+    }
+  }
+  closedir(dir_ptr);
 }
 
-void file_info(char* filename) {
+void file_info(char* filename, char* d_name) {
   struct stat info;
-  get_stat(&info, filename);
+  get_stat(&info, filename, d_name);
+
+  printf("");
+
+
 }
 
-void get_stat(struct stat* info, char* filename) {
-  if (stat(filename, info)) {
+void get_stat(struct stat* info, char* filename, char* d_name) {
+  if (stat(d_name, info)) {
     perror(filename);
   }
 }
