@@ -25,6 +25,7 @@
 
 #include <dirent.h>
 #include <fcntl.h>
+#include <time.h>
 #include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,6 +39,8 @@ void file_info(char* filename, char* d_name);
 void get_stat(struct stat* info, char* filename, char* d_name);
 int isDir(char* line);
 int isRoot(char* line);
+char* getFileType(char* path);
+void getDate(char* str, time_t date);
 
 int main(int argc, char** argv) {
   // forensic -r -h [type] -o [file] -v [file]
@@ -112,8 +115,28 @@ void file_info(char* filename, char* d_name) {
 
   char* name = filename;
   int size = (int)info.st_size;
-  
-  printf("%s,%d\n", d_name, size);
+  char* create_date = (char*)malloc(21*sizeof(char));
+
+  //getDate(create_date, info.st_atime);
+
+  printf("%s", d_name);             // NAME
+  printf(",");          
+                                    // TYPE
+  printf(",");
+  printf("%d", size);               // SIZE
+  printf(",");
+                                    // ACCESS
+  printf(",");
+  printf("%s\n", create_date);      // CREATE
+  printf(",");
+                                    // MODIFICATION
+  printf(",");
+                                    // MD5
+  printf(",");
+                                    // SHA1
+  printf(",");
+                                    // SHA256
+  printf("\n");
 }
 
 void get_stat(struct stat* info, char* filename, char* d_name) {
@@ -132,4 +155,14 @@ int isDir(char* line) {
   get_stat(&info, line, line);
 
   return S_ISDIR(info.st_mode);
+}
+
+char* getFileType(char* path){
+  char* type;
+
+  return type;
+}
+
+void getDate(char* str, time_t date){
+  strftime(str, 20, "%Y-%m-%dT%H:%M:%S", localtime(&date));
 }
