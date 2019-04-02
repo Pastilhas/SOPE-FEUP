@@ -35,9 +35,9 @@
 void dir_info(char* dirname);
 void file_info(char* filename, char* d_name);
 void get_stat(struct stat* info, char* filename, char* d_name);
-int isDir(char* line);
-int isRoot(char* line);
-void getFileType(char type[3], mode_t mode);
+int  isDir(char* line);
+int  isRoot(char* line);
+void getAccess(char access[3], mode_t mode);
 void getDate(char* str, time_t date);
 
 int main(int argc, char** argv) {
@@ -112,26 +112,26 @@ void file_info(char* filename, char* d_name) {
   get_stat(&info, filename, d_name);
 
   char* name        = filename;
-  char type[3];
+  char access[3];
   int size          = (int)info.st_size;
   char* access_time = (char*)malloc(21*sizeof(char));
   char* mod_time    = (char*)malloc(21*sizeof(char));
 
   getDate(access_time, info.st_atime);
   getDate(mod_time, info.st_mtime);
-  getFileType(type, info.st_mode);
+  getAccess(access, info.st_mode);
 
   printf("%s", d_name);             // NAME
-  printf(",");          
-                                    // TYPE
+  printf(",");
+                 // TYPE
   printf(",");
   printf("%d", size);               // SIZE
   printf(",");
-                                    // ACCESS
+  printf("%s", access);             // ACCESS
   printf(",");
-  printf("%s", access_time);      // ACCESS DATE
+  printf("%s", access_time);        // ACCESS DATE
   printf(",");
-  printf("%s", access_time);      // MODIFICATION DATE
+  printf("%s", access_time);        // MODIFICATION DATE
   printf(",");
                                     // MD5
   printf(",");
@@ -167,10 +167,10 @@ int isDir(char* line) {
   return S_ISDIR(info.st_mode);
 }
 
-void getFileType(char type[3], mode_t mode){
-  type[0] = (fileStat.st_mode & S_IRUSR) ? 'r' : '-';
-  type[1] = (fileStat.st_mode & S_IWUSR) ? 'w' : '-';
-  type[2] = (fileStat.st_mode & S_IXUSR) ? 'x' : '-';
+void getAccess(char access[3], mode_t mode){
+  access[0] = (mode & S_IRUSR) ? 'r' : '-';
+  access[1] = (mode & S_IWUSR) ? 'w' : '-';
+  access[2] = (mode & S_IXUSR) ? 'x' : '-';
 }
 
 void getDate(char* str, time_t date){
