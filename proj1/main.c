@@ -30,7 +30,10 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <unistd.h>
+#include <unistd.h> 
+
+#define READ 0 
+#define WRITE 1
 
 void dir_info(char* dirname);
 void file_info(char* filename, char* d_name);
@@ -39,6 +42,7 @@ int  isDir(char* line);
 int  isRoot(char* line);
 void getAccess(char access[3], mode_t mode);
 void getDate(char* str, time_t date);
+void getFileType(char* path, char* type);
 
 int main(int argc, char** argv) {
   // forensic -r -h [type] -o [file] -v [file]
@@ -116,14 +120,18 @@ void file_info(char* filename, char* d_name) {
   int size          = (int)info.st_size;
   char* access_time = (char*)malloc(21*sizeof(char));
   char* mod_time    = (char*)malloc(21*sizeof(char));
+  char* type;
 
-  getDate(access_time, info.st_atime);
-  getDate(mod_time, info.st_mtime);
+  if(getDate(access_time, info.st_atime))
+    exit(-1);
+  if(getDate(mod_time, info.st_mtime))
+    exit(-1);
   getAccess(access, info.st_mode);
+  getFileType(filename, type);
 
   printf("%s", d_name);             // NAME
   printf(",");
-                 // TYPE
+  printf("%s", type);               // TYPE
   printf(",");
   printf("%d", size);               // SIZE
   printf(",");
@@ -145,6 +153,7 @@ void file_info(char* filename, char* d_name) {
 
   free(access_time);
   free(mod_time);
+  free(type);
 
 
 }
@@ -173,6 +182,53 @@ void getAccess(char access[3], mode_t mode){
   access[2] = (mode & S_IXUSR) ? 'x' : '-';
 }
 
-void getDate(char* str, time_t date){
-  strftime(str, 20, "%Y-%m-%dT%H:%M:%S", localtime(&date));
+int getDate(char* str, time_t date){
+  if(strftime(str, 20, "%Y-%m-%dT%H:%M:%S", localtime(&date)) <= 0)
+    return -1;
+}
+
+void getFileType(char* path, char* type){
+  int fd[2];
+  pid_t pid;
+
+  pid = fork();
+
+  if(pid > 0){
+    close(fd[WRITE]);
+    char tmp[100] = {'\0'};
+    char tmp2[100] = {'\0'};
+    int i;
+    int length = 0;
+
+    if(read(fd[READ], tmp, 100) < 0)
+      exit(-2);
+
+    for(i = 0; i < 100; i++){
+      if(tmp[i] == ':'){
+        i++;
+        break;
+      }
+    }
+
+    for(i; i < 100; i++){
+      if(tmp[i] == '\0' || tmp[i] == ','){
+        break;
+      }else{
+        tmp2[length] = tmp[i];
+        length++;
+      }
+    }
+
+    type = (char*)malloc((length+1)*sizeof(char));
+    strcpy(type, tmp2);
+  }
+  else if(pid == 0){
+    close(fd[READ]);
+    if(dup2(fd[WRITE], STDOUT_FILENO) == -1)
+      exit(-2);
+    execvp("file", {path});
+    exit(-2);
+  }else{
+    exit(-2);
+  }
 }
