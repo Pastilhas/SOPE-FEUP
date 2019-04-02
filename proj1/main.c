@@ -41,8 +41,8 @@ void get_stat(struct stat* info, char* filename, char* d_name);
 int isDir(char* line);
 int isRoot(char* line);
 void getAccess(char access[3], mode_t mode);
-int getDate(char* str, time_t date);
-void getFileType(char* path, char* type);
+void getDate(char* str, time_t date);
+char* getFileType(char* path);
 
 int main(int argc, char** argv) {
   // forensic -r -h [type] -o [file] -v [file]
@@ -123,15 +123,13 @@ void file_info(char* filename, char* d_name) {
   char* type;
 
   printf("getFile\n");
-  getFileType(filename, type);
+  type = getFileType(filename);
   printf("getAccess\n");
   getAccess(access, info.st_mode);
   printf("getAtime\n");
-  if (getDate(access_time, info.st_atime))
-    exit(-1);
+  getDate(access_time, info.st_atime);
   printf("getMtime\n");
-  if (getDate(mod_time, info.st_mtime))
-    exit(-1);
+  getDate(mod_time, info.st_mtime);
   printf("getPP\n");
 
   printf("%s", d_name);  // NAME
@@ -183,14 +181,11 @@ void getAccess(char access[3], mode_t mode) {
   access[2] = (mode & S_IXUSR) ? 'x' : '-';
 }
 
-int getDate(char* str, time_t date) {
-  if (strftime(str, 20, "%Y-%m-%dT%H:%M:%S", localtime(&date)) <= 0){
-    printf("%s\n", str);
-    return -1;
-  }
+void getDate(char* str, time_t date) {
+  strftime(str, 20, "%Y-%m-%dT%H:%M:%S", localtime(&date));
 }
 
-void getFileType(char* path, char* type) {
+char* getFileType(char* path) {
   int fd[2];
   int n;
   pid_t pid;
@@ -206,6 +201,7 @@ void getFileType(char* path, char* type) {
     char tmp2[100];
     int i;
     int length = 0;
+    char* type;
 
     if ((n = read(fd[READ], tmp, 100)) < 0) {
       printf("fail to read %d\n", n);
@@ -230,7 +226,7 @@ void getFileType(char* path, char* type) {
 
     type = (char*)malloc(length * sizeof(char));
     strcpy(type, tmp2);
-    return;
+    return type;
   } else if (pid == 0) {
     close(fd[READ]);
     if (dup2(fd[WRITE], STDOUT_FILENO) == -1) {
