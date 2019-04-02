@@ -1,4 +1,4 @@
-/* Operative Systems Project
+﻿/* Operative Systems Project
  * by Joao Campos
  *
  * 18/03/2019
@@ -122,15 +122,15 @@ void file_info(char* filename, char* d_name) {
   char* mod_time    = (char*)malloc(21*sizeof(char));
   char* type;
 
-  printf("getFile");
+  printf("getFile\n");
   getFileType(filename, type);
-  printf("getAccess");
+  printf("getAccess\n");
   getAccess(access, info.st_mode);
-  printf("getAtime");
+  printf("getAtime\n");
   if(getDate(access_time, info.st_atime)) exit(-1);
-  printf("getMtime");
+  printf("getMtime\n");
   if(getDate(mod_time, info.st_mtime))    exit(-1);
-  printf("getPP");
+  printf("getPP\n");
 
   printf("%s", d_name);             // NAME
   printf(",");
@@ -192,28 +192,36 @@ int getDate(char* str, time_t date){
 
 void getFileType(char* path, char* type){
   int fd[2];
+  int n;
   pid_t pid;
+	
+  if(pipe(fd) < 0)
+    printf("failed pipe\n");
 
   pid = fork();
 
   if(pid > 0){
     close(fd[WRITE]);
-    char tmp[100] = {'\0'};
-    char tmp2[100] = {'\0'};
+    char tmp[1000];
+    char tmp2[1000];
     int i;
     int length = 0;
 
-    if(read(fd[READ], tmp, 100) < 0)
+    if((n=read(fd[READ], tmp, 1000)) < 0){
+	printf("fail to read %d\n", n);
       exit(-2);
+    }
 
-    for(i = 0; i < 100; i++){
+    printf("%s\n", tmp);
+
+    for(i = 0; i < 1000; i++){
       if(tmp[i] == ':'){
         i++;
         break;
       }
     }
 
-    for(i; i < 100; i++){
+    for(i; i < 1000; i++){
       if(tmp[i] == '\0' || tmp[i] == ','){
         break;
       }else{
@@ -224,14 +232,20 @@ void getFileType(char* path, char* type){
 
     type = (char*)malloc((length+1)*sizeof(char));
     strcpy(type, tmp2);
+    return;
   }
   else if(pid == 0){
     close(fd[READ]);
-    if(dup2(fd[WRITE], STDOUT_FILENO) == -1)
-      exit(-2);
+    if(dup2(fd[WRITE], STDOUT_FILENO) == -1){
+	printf("failed dup2\n");      
+	exit(-2);
+    }
     execlp("file", path, NULL);
+    printf("failed exec\n");
     exit(-2);
   }else{
+    printf("failed fork\n");
     exit(-2);
   }
+  exit(-2);
 }
