@@ -184,8 +184,10 @@ void getAccess(char access[3], mode_t mode) {
 }
 
 int getDate(char* str, time_t date) {
-  if (strftime(str, 20, "%Y-%m-%dT%H:%M:%S", localtime(&date)) <= 0)
+  if (strftime(str, 20, "%Y-%m-%dT%H:%M:%S", localtime(&date)) <= 0){
+    printf("%s\n", str);
     return -1;
+  }
 }
 
 void getFileType(char* path, char* type) {
@@ -200,26 +202,24 @@ void getFileType(char* path, char* type) {
 
   if (pid > 0) {
     close(fd[WRITE]);
-    char tmp[1000];
-    char tmp2[1000];
+    char tmp[100];
+    char tmp2[100];
     int i;
     int length = 0;
 
-    if ((n = read(fd[READ], tmp, 1000)) < 0) {
+    if ((n = read(fd[READ], tmp, 100)) < 0) {
       printf("fail to read %d\n", n);
       exit(-2);
     }
 
-    printf("%s\n", tmp);
-
-    for (i = 0; i < 1000; i++) {
-      if (tmp[i] == ':') {
+    for (i = 0; i < 100; i++) {
+      if (tmp[i] == ' ') {
         i++;
         break;
       }
     }
 
-    for (i; i < 1000; i++) {
+    for (i; i < 100; i++) {
       if (tmp[i] == '\0' || tmp[i] == ',') {
         break;
       } else {
@@ -228,7 +228,7 @@ void getFileType(char* path, char* type) {
       }
     }
 
-    type = (char*)malloc((length + 1) * sizeof(char));
+    type = (char*)malloc(length * sizeof(char));
     strcpy(type, tmp2);
     return;
   } else if (pid == 0) {
