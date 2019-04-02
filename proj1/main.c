@@ -122,12 +122,15 @@ void file_info(char* filename, char* d_name) {
   char* mod_time    = (char*)malloc(21*sizeof(char));
   char* type;
 
-  if(getDate(access_time, info.st_atime))
-    exit(-1);
-  if(getDate(mod_time, info.st_mtime))
-    exit(-1);
-  getAccess(access, info.st_mode);
+  printf("getFile");
   getFileType(filename, type);
+  printf("getAccess");
+  getAccess(access, info.st_mode);
+  printf("getAtime");
+  if(getDate(access_time, info.st_atime)) exit(-1);
+  printf("getMtime");
+  if(getDate(mod_time, info.st_mtime))    exit(-1);
+  printf("getPP");
 
   printf("%s", d_name);             // NAME
   printf(",");
@@ -224,10 +227,8 @@ void getFileType(char* path, char* type){
   }
   else if(pid == 0){
     close(fd[READ]);
-    if(dup2(fd[WRITE], STDOUT_FILENO) == -1){
-      printf("failed to dup2\n");
+    if(dup2(fd[WRITE], STDOUT_FILENO) == -1)
       exit(-2);
-    }
     execlp("file", path, NULL);
     exit(-2);
   }else{
