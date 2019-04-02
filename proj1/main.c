@@ -23,23 +23,23 @@
 
 #include <dirent.h>
 #include <fcntl.h>
-#include <time.h>
 #include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <unistd.h> 
+#include <time.h>
+#include <unistd.h>
 
-#define READ 0 
+#define READ 0
 #define WRITE 1
 
 void dir_info(char* dirname);
 void file_info(char* filename, char* d_name);
 void get_stat(struct stat* info, char* filename, char* d_name);
-int  isDir(char* line);
-int  isRoot(char* line);
+int isDir(char* line);
+int isRoot(char* line);
 void getAccess(char access[3], mode_t mode);
 int getDate(char* str, time_t date);
 void getFileType(char* path, char* type);
@@ -115,11 +115,11 @@ void file_info(char* filename, char* d_name) {
   struct stat info;
   get_stat(&info, filename, d_name);
 
-  char* name        = filename;
+  char* name = filename;
   char access[3];
-  int size          = (int)info.st_size;
-  char* access_time = (char*)malloc(21*sizeof(char));
-  char* mod_time    = (char*)malloc(21*sizeof(char));
+  int size = (int)info.st_size;
+  char* access_time = (char*)malloc(21 * sizeof(char));
+  char* mod_time = (char*)malloc(21 * sizeof(char));
   char* type;
 
   printf("getFile\n");
@@ -127,38 +127,35 @@ void file_info(char* filename, char* d_name) {
   printf("getAccess\n");
   getAccess(access, info.st_mode);
   printf("getAtime\n");
-  if(getDate(access_time, info.st_atime)) exit(-1);
+  if (getDate(access_time, info.st_atime))
+    exit(-1);
   printf("getMtime\n");
-  if(getDate(mod_time, info.st_mtime))    exit(-1);
+  if (getDate(mod_time, info.st_mtime))
+    exit(-1);
   printf("getPP\n");
 
-  printf("%s", d_name);             // NAME
+  printf("%s", d_name);  // NAME
   printf(",");
-  printf("%s", type);               // TYPE
+  printf("%s", type);  // TYPE
   printf(",");
-  printf("%d", size);               // SIZE
+  printf("%d", size);  // SIZE
   printf(",");
-  printf("%s", access);             // ACCESS
+  printf("%s", access);  // ACCESS
   printf(",");
-  printf("%s", access_time);        // ACCESS DATE
+  printf("%s", access_time);  // ACCESS DATE
   printf(",");
-  printf("%s", access_time);        // MODIFICATION DATE
+  printf("%s", access_time);  // MODIFICATION DATE
   printf(",");
-                                    // MD5
+  // MD5
   printf(",");
-                                    // SHA1
+  // SHA1
   printf(",");
-                                    // SHA256
+  // SHA256
   printf("\n");
-
-
-
 
   free(access_time);
   free(mod_time);
   free(type);
-
-
 }
 
 void get_stat(struct stat* info, char* filename, char* d_name) {
@@ -168,7 +165,8 @@ void get_stat(struct stat* info, char* filename, char* d_name) {
 }
 
 int isRoot(char* line) {
-  if (line[0] == '/') return 1;
+  if (line[0] == '/')
+    return 1;
   return 0;
 }
 
@@ -179,71 +177,70 @@ int isDir(char* line) {
   return S_ISDIR(info.st_mode);
 }
 
-void getAccess(char access[3], mode_t mode){
+void getAccess(char access[3], mode_t mode) {
   access[0] = (mode & S_IRUSR) ? 'r' : '-';
   access[1] = (mode & S_IWUSR) ? 'w' : '-';
   access[2] = (mode & S_IXUSR) ? 'x' : '-';
 }
 
-int getDate(char* str, time_t date){
-  if(strftime(str, 20, "%Y-%m-%dT%H:%M:%S", localtime(&date)) <= 0)
+int getDate(char* str, time_t date) {
+  if (strftime(str, 20, "%Y-%m-%dT%H:%M:%S", localtime(&date)) <= 0)
     return -1;
 }
 
-void getFileType(char* path, char* type){
+void getFileType(char* path, char* type) {
   int fd[2];
   int n;
   pid_t pid;
-	
-  if(pipe(fd) < 0)
+
+  if (pipe(fd) < 0)
     printf("failed pipe\n");
 
   pid = fork();
 
-  if(pid > 0){
+  if (pid > 0) {
     close(fd[WRITE]);
     char tmp[1000];
     char tmp2[1000];
     int i;
     int length = 0;
 
-    if((n=read(fd[READ], tmp, 1000)) < 0){
-	printf("fail to read %d\n", n);
+    if ((n = read(fd[READ], tmp, 1000)) < 0) {
+      printf("fail to read %d\n", n);
       exit(-2);
     }
 
     printf("%s\n", tmp);
 
-    for(i = 0; i < 1000; i++){
-      if(tmp[i] == ':'){
+    for (i = 0; i < 1000; i++) {
+      if (tmp[i] == ':') {
         i++;
         break;
       }
     }
 
-    for(i; i < 1000; i++){
-      if(tmp[i] == '\0' || tmp[i] == ','){
+    for (i; i < 1000; i++) {
+      if (tmp[i] == '\0' || tmp[i] == ',') {
         break;
-      }else{
+      } else {
         tmp2[length] = tmp[i];
         length++;
       }
     }
 
-    type = (char*)malloc((length+1)*sizeof(char));
+    type = (char*)malloc((length + 1) * sizeof(char));
     strcpy(type, tmp2);
     return;
-  }
-  else if(pid == 0){
+  } else if (pid == 0) {
     close(fd[READ]);
-    if(dup2(fd[WRITE], STDOUT_FILENO) == -1){
-	printf("failed dup2\n");      
-	exit(-2);
+    if (dup2(fd[WRITE], STDOUT_FILENO) == -1) {
+      printf("failed dup2\n");
+      exit(-2);
     }
-    execlp("file", path, NULL);
+    execlp("file", "file", path, NULL);
     printf("failed exec\n");
     exit(-2);
-  }else{
+  } else {
     printf("failed fork\n");
     exit(-2);
   }
