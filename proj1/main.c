@@ -41,7 +41,7 @@ void get_stat(struct stat* info, char* filename, char* d_name);
 int  isDir(char* line);
 int  isRoot(char* line);
 void getAccess(char access[3], mode_t mode);
-void getDate(char* str, time_t date);
+int getDate(char* str, time_t date);
 void getFileType(char* path, char* type);
 
 int main(int argc, char** argv) {
@@ -224,9 +224,11 @@ void getFileType(char* path, char* type){
   }
   else if(pid == 0){
     close(fd[READ]);
-    if(dup2(fd[WRITE], STDOUT_FILENO) == -1)
+    if(dup2(fd[WRITE], STDOUT_FILENO) == -1){
+      printf("failed to dup2\n");
       exit(-2);
-    execvp("file", {path});
+    }
+    execlp("file", path, NULL);
     exit(-2);
   }else{
     exit(-2);
