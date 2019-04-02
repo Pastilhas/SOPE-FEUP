@@ -37,7 +37,7 @@ void file_info(char* filename, char* d_name);
 void get_stat(struct stat* info, char* filename, char* d_name);
 int isDir(char* line);
 int isRoot(char* line);
-char* getFileType(char* path);
+void getFileType(char type[3], mode_t mode);
 void getDate(char* str, time_t date);
 
 int main(int argc, char** argv) {
@@ -112,7 +112,7 @@ void file_info(char* filename, char* d_name) {
   get_stat(&info, filename, d_name);
 
   char* name        = filename;
-  char* type        = (char*)malloc(4*sizeof(char));
+  char type[3];
   int size          = (int)info.st_size;
   char* access_time = (char*)malloc(21*sizeof(char));
   char* mod_time    = (char*)malloc(21*sizeof(char));
@@ -129,9 +129,9 @@ void file_info(char* filename, char* d_name) {
   printf(",");
                                     // ACCESS
   printf(",");
-  printf("%s\n", access_time);      // ACCESS DATE
+  printf("%s", access_time);      // ACCESS DATE
   printf(",");
-  printf("%s\n", access_time);      // MODIFICATION DATE
+  printf("%s", access_time);      // MODIFICATION DATE
   printf(",");
                                     // MD5
   printf(",");
@@ -167,10 +167,10 @@ int isDir(char* line) {
   return S_ISDIR(info.st_mode);
 }
 
-void getFileType(char* type, mode_t mode){
-  type[0] = (fileStat.st_mode & S_IRUSR) ? "r" : "-";
-  type[1] = (fileStat.st_mode & S_IWUSR) ? "w" : "-";
-  type[2] = (fileStat.st_mode & S_IXUSR) ? "x" : "-";
+void getFileType(char type[3], mode_t mode){
+  type[0] = (fileStat.st_mode & S_IRUSR) ? 'r' : '-';
+  type[1] = (fileStat.st_mode & S_IWUSR) ? 'w' : '-';
+  type[2] = (fileStat.st_mode & S_IXUSR) ? 'x' : '-';
 }
 
 void getDate(char* str, time_t date){
