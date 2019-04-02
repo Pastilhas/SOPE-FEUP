@@ -1,7 +1,5 @@
 /* Operative Systems Project
  * by Joao Campos
- *    Diogo Sousa
- *    José Martins
  *
  * 18/03/2019
  */
@@ -72,7 +70,7 @@ int main(int argc, char** argv) {
     file_info(file_name, basename(file_name));
   }
 
-  return 0;
+  exit(0);
 }
 
 void dir_info(char* dirname) {
@@ -113,11 +111,15 @@ void file_info(char* filename, char* d_name) {
   struct stat info;
   get_stat(&info, filename, d_name);
 
-  char* name = filename;
-  int size = (int)info.st_size;
-  char* create_date = (char*)malloc(21*sizeof(char));
+  char* name        = filename;
+  char* type        = (char*)malloc(4*sizeof(char));
+  int size          = (int)info.st_size;
+  char* access_time = (char*)malloc(21*sizeof(char));
+  char* mod_time    = (char*)malloc(21*sizeof(char));
 
-  //getDate(create_date, info.st_atime);
+  getDate(access_time, info.st_atime);
+  getDate(mod_time, info.st_mtime);
+  getFileType(type, info.st_mode);
 
   printf("%s", d_name);             // NAME
   printf(",");          
@@ -127,9 +129,9 @@ void file_info(char* filename, char* d_name) {
   printf(",");
                                     // ACCESS
   printf(",");
-  printf("%s\n", create_date);      // CREATE
+  printf("%s\n", access_time);      // ACCESS DATE
   printf(",");
-                                    // MODIFICATION
+  printf("%s\n", access_time);      // MODIFICATION DATE
   printf(",");
                                     // MD5
   printf(",");
@@ -137,6 +139,14 @@ void file_info(char* filename, char* d_name) {
   printf(",");
                                     // SHA256
   printf("\n");
+
+
+
+
+  free(access_time);
+  free(mod_time);
+
+
 }
 
 void get_stat(struct stat* info, char* filename, char* d_name) {
@@ -157,10 +167,10 @@ int isDir(char* line) {
   return S_ISDIR(info.st_mode);
 }
 
-char* getFileType(char* path){
-  char* type;
-
-  return type;
+void getFileType(char* type, mode_t mode){
+  type[0] = (fileStat.st_mode & S_IRUSR) ? "r" : "-";
+  type[1] = (fileStat.st_mode & S_IWUSR) ? "w" : "-";
+  type[2] = (fileStat.st_mode & S_IXUSR) ? "x" : "-";
 }
 
 void getDate(char* str, time_t date){
