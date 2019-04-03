@@ -21,31 +21,16 @@
  * [-v]   gerar log files
  */
 
-#include <dirent.h>
-#include <fcntl.h>
-#include <libgen.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <time.h>
-#include <unistd.h>
-
-#define READ 0
-#define WRITE 1
+#include "getters.h"
 
 void dir_info(char* dirname);
 void file_info(char* filename, char* d_name);
-void get_stat(struct stat* info, char* filename, char* d_name);
-int isDir(char* line);
-int isRoot(char* line);
-void getAccess(char access[3], mode_t mode);
-void getDate(char* str, time_t date);
-char* getFileType(char* path);
-char* getMD5(char* path);
-char* getSHA1(char* path);
-char* getSHA256(char* path);
+void getArgs(int argc, char** argv);
+void getHash(char* type);
+void rec_dir(int argc, char** argv, char* path);
+
+static int arg[4];
+static int hash[3];
 
 int main(int argc, char** argv) {
   // forensic -r -h [type] -o [file] -v [file]
@@ -58,6 +43,9 @@ int main(int argc, char** argv) {
     }
     exit(argc);
   }
+
+  getArgs(argc, argv);
+  if (argv[1]) getHash(argv[arg[1]]);
 
   char* log_name = getenv("LOGFILENAME");
   char* file_name;
@@ -99,7 +87,11 @@ void dir_info(char* dirname) {
           strcpy(filename, dirname);
           strcat(filename, "/");
           strcat(filename, dirent->d_name);
-          file_info(filename, dirent->d_name);
+          if (!isDir(filename)) {
+            file_info(filename, dirent->d_name);
+          } else if (arg[0]) {
+            rec_dir(filename);
+          }
           free(filename);
         } else {
           write(STDOUT_FILENO, "Failed to create file path.\n", 28);
@@ -119,7 +111,6 @@ void file_info(char* filename, char* d_name) {
   get_stat(&info, filename, d_name);
 
   // NAME
-  char* name = filename;
   printf("%s", d_name);
 
   // TYPE
@@ -151,265 +142,80 @@ void file_info(char* filename, char* d_name) {
 
   // MD5
   char* md5;
-  md5 = getMD5(filename);
+  getMD5(filename);
   printf(",%s", md5);
-  free(md5);
 
   // SHA1
   char* sha1;
-  sha1 = getSHA1(filename);
+  getSHA1(filename);
   printf(",%s", sha1);
-  free(sha1);
 
   // SHA256
   char* sha256;
-  sha256 = getSHA256(filename);
+  getSHA256(filename);
   printf(",%s", sha256);
-  free(sha256);
 
   printf("\n");
 }
 
-void get_stat(struct stat* info, char* filename, char* d_name) {
-  if (stat(filename, info)) {
-    perror(d_name);
+void getArgs(int argc, char** argv) {
+  // index indicates tag, value indicates index of aditional argument
+  //    -r -h -o -v
+  //     0  1  2  3
+
+  for (int i = 0; i < argc; i++) {
+    char* ar = argv[i];
+    if (ar == "-r") {
+      arg[0] = 1;
+    } else if (ar == "-h") {
+      arg[1] = i + 2;
+      i++;
+    } else if (ar == "-o") {
+      arg[2] = i + 2;
+      i++;
+    } else if (ar == "-v") {
+      arg[3] = 1;
+    }
   }
 }
 
-int isRoot(char* line) {
-  if (line[0] == '/')
-    return 1;
-  return 0;
+void getHash(char* type) {
+  size_t len = strlen(type);
+  char* tmp[10];
+  char* tmp2;
+  int size = 0;
+  int i = 0;
+
+  for (i; i < len; i++) {
+    if (type[i] == ',' || type[i] == '\0') {
+      tmp2 = (char*)malloc(size * sizeof(char));
+      if(strcmp(tmp2, "md5") == 0)  hash[0] = 1;
+      else if(strcmp(tmp2, "sha1") == 0)  hash[1] = 1;
+      else if(strcmp(tmp2, "sha256") == 0)  hash[2] = 1;
+      free(tmp2);
+      size = 0;
+      memset(tmp, '\0', 10);
+    } else {
+      size++;
+      tmp[i] = type[i];
+    }
+  }
 }
 
-int isDir(char* line) {
-  struct stat info;
-  get_stat(&info, line, line);
-
-  return S_ISDIR(info.st_mode);
-}
-
-void getAccess(char access[3], mode_t mode) {
-  access[0] = (mode & S_IRUSR) ? 'r' : '-';
-  access[1] = (mode & S_IWUSR) ? 'w' : '-';
-  access[2] = (mode & S_IXUSR) ? 'x' : '-';
-}
-
-void getDate(char* str, time_t date) {
-  strftime(str, 20, "%Y-%m-%dT%H:%M:%S", localtime(&date));
-}
-
-char* getFileType(char* path) {
-  int fd[2];
+void rec_dir(int argc, char** argv, char* path) {
   int n;
   pid_t pid;
-
-  if (pipe(fd) < 0)
-    printf("failed pipe\n");
 
   pid = fork();
 
   if (pid > 0) {
-    close(fd[WRITE]);
-    char tmp[100];
-    char tmp2[100];
-    int i;
-    int length = 0;
-    char* type;
-
-    if ((n = read(fd[READ], tmp, 100)) < 0) {
-      printf("fail to read %d\n", n);
-      exit(-2);
-    }
-
-    for (i = 0; i < 100; i++) {
-      if (tmp[i] == ' ') {
-        i++;
-        break;
-      }
-    }
-
-    for (i; i < 100; i++) {
-      if (tmp[i] == '\0' || tmp[i] == ',') {
-        break;
-      } else {
-        tmp2[length] = tmp[i];
-        length++;
-      }
-    }
-
-    type = (char*)malloc(length * sizeof(char));
-    strcpy(type, tmp2);
-    return type;
   } else if (pid == 0) {
-    close(fd[READ]);
-    if (dup2(fd[WRITE], STDOUT_FILENO) == -1) {
-      printf("failed dup2\n");
-      exit(-2);
-    }
-    execlp("file", "file", path, NULL);
+    argv[argc - 1] = path;
+    execvp("./foresinc", argv);
     printf("failed exec\n");
     exit(-2);
   } else {
     printf("failed fork\n");
     exit(-2);
   }
-  exit(-2);
-}
-
-char* getMD5(char* path){
-  int fd[2];
-  int n;
-  pid_t pid;
-
-  if (pipe(fd) < 0)
-    printf("failed pipe\n");
-
-  pid = fork();
-
-  if (pid > 0) {
-    close(fd[WRITE]);
-    char tmp[100];
-    char tmp2[100];
-    int i;
-    int length = 0;
-    char* type;
-
-    if ((n = read(fd[READ], tmp, 100)) < 0) {
-      printf("fail to read %d\n", n);
-      exit(-2);
-    }
-
-    for (i = 0; i < 100; i++) {
-      if (tmp[i] == '\0' || tmp[i] == ' ') {
-        break;
-      } else {
-        tmp2[length] = tmp[i];
-        length++;
-      }
-    }
-
-    type = (char*)malloc(length * sizeof(char));
-    strcpy(type, tmp2);
-    return type;
-  } else if (pid == 0) {
-    close(fd[READ]);
-    if (dup2(fd[WRITE], STDOUT_FILENO) == -1) {
-      printf("failed dup2\n");
-      exit(-2);
-    }
-    execlp("md5sum", "md5sum", path, NULL);
-    printf("failed exec\n");
-    exit(-2);
-  } else {
-    printf("failed fork\n");
-    exit(-2);
-  }
-  exit(-2);
-
-}
-
-char* getSHA1(char* path){
-  int fd[2];
-  int n;
-  pid_t pid;
-
-  if (pipe(fd) < 0)
-    printf("failed pipe\n");
-
-  pid = fork();
-
-  if (pid > 0) {
-    close(fd[WRITE]);
-    char tmp[100];
-    char tmp2[100];
-    int i;
-    int length = 0;
-    char* type;
-
-    if ((n = read(fd[READ], tmp, 100)) < 0) {
-      printf("fail to read %d\n", n);
-      exit(-2);
-    }
-
-    for (i = 0; i < 100; i++) {
-      if (tmp[i] == '\0' || tmp[i] == ' ') {
-        break;
-      } else {
-        tmp2[length] = tmp[i];
-        length++;
-      }
-    }
-
-    type = (char*)malloc(length * sizeof(char));
-    strcpy(type, tmp2);
-    return type;
-  } else if (pid == 0) {
-    close(fd[READ]);
-    if (dup2(fd[WRITE], STDOUT_FILENO) == -1) {
-      printf("failed dup2\n");
-      exit(-2);
-    }
-    execlp("sha1sum", "sha1sum", path, NULL);
-    printf("failed exec\n");
-    exit(-2);
-  } else {
-    printf("failed fork\n");
-    exit(-2);
-  }
-  exit(-2);
-
-}
-
-char* getSHA256(char* path){
-  int fd[2];
-  int n;
-  pid_t pid;
-
-  if (pipe(fd) < 0)
-    printf("failed pipe\n");
-
-  pid = fork();
-
-  if (pid > 0) {
-    close(fd[WRITE]);
-    char tmp[100];
-    char tmp2[100];
-    int i;
-    int length = 0;
-    char* type;
-
-    if ((n = read(fd[READ], tmp, 100)) < 0) {
-      printf("fail to read %d\n", n);
-      exit(-2);
-    }
-
-    for (i = 0; i < 100; i++) {
-      if (tmp[i] == '\0' || tmp[i] == ' ') {
-        break;
-      } else {
-        tmp2[length] = tmp[i];
-        length++;
-      }
-    }
-
-    type = (char*)malloc(length * sizeof(char));
-    memset(type, '\0', length);
-    strcpy(type, tmp2);
-    return type;
-  } else if (pid == 0) {
-    close(fd[READ]);
-    if (dup2(fd[WRITE], STDOUT_FILENO) == -1) {
-      printf("failed dup2\n");
-      exit(-2);
-    }
-    execlp("sha256sum", "sha256sum", path, NULL);
-    printf("failed exec\n");
-    exit(-2);
-  } else {
-    printf("failed fork\n");
-    exit(-2);
-  }
-  exit(-2);
-
 }
