@@ -43,6 +43,9 @@ int isRoot(char* line);
 void getAccess(char access[3], mode_t mode);
 void getDate(char* str, time_t date);
 char* getFileType(char* path);
+char* getMD5(char* path);
+char* getSHA1(char* path);
+char* getSHA256(char* path);
 
 int main(int argc, char** argv) {
   // forensic -r -h [type] -o [file] -v [file]
@@ -115,45 +118,53 @@ void file_info(char* filename, char* d_name) {
   struct stat info;
   get_stat(&info, filename, d_name);
 
+  // NAME
   char* name = filename;
-  char access[3];
-  int size = (int)info.st_size;
-  char* access_time = (char*)malloc(21 * sizeof(char));
-  char* mod_time = (char*)malloc(21 * sizeof(char));
+  printf("%s", d_name);
+
+  // TYPE
   char* type;
-
-  printf("getFile\n");
   type = getFileType(filename);
-  printf("getAccess\n");
-  getAccess(access, info.st_mode);
-  printf("getAtime\n");
-  getDate(access_time, info.st_atime);
-  printf("getMtime\n");
-  getDate(mod_time, info.st_mtime);
-  printf("getPP\n");
-
-  printf("%s", d_name);  // NAME
-  printf(",");
-  printf("%s", type);  // TYPE
-  printf(",");
-  printf("%d", size);  // SIZE
-  printf(",");
-  printf("%s", access);  // ACCESS
-  printf(",");
-  printf("%s", access_time);  // ACCESS DATE
-  printf(",");
-  printf("%s", access_time);  // MODIFICATION DATE
-  printf(",");
-  // MD5
-  printf(",");
-  // SHA1
-  printf(",");
-  // SHA256
-  printf("\n");
-
-  free(access_time);
-  free(mod_time);
+  printf(",%s", type);
   free(type);
+
+  // SIZE
+  int size = (int)info.st_size;
+  printf(",%d", size);
+  
+  // ACCESS
+  char access[3];
+  getAccess(access, info.st_mode);
+  printf(",%s", access);  
+  
+  // ACCESS DATE
+  char* access_time = (char*)malloc(21 * sizeof(char));
+  getDate(access_time, info.st_atime);
+  printf(",%s", access_time);
+  free(access_time);
+  
+  // MODIFICATION DATE
+  char* mod_time = (char*)malloc(21 * sizeof(char));
+  getDate(mod_time, info.st_mtime);
+  printf(",%s", access_time);
+  free(mod_time);
+
+  // MD5
+  char* md5;
+  getMD5(filename);
+  printf(",%s", md5);
+
+  // SHA1
+  char* sha1;
+  getSHA1(filename);
+  printf(",%s", sha1);
+  
+  // SHA256
+  char* sha256;
+  getSHA256(filename);
+  printf(",%s", sha256);
+  
+  printf("\n");
 }
 
 void get_stat(struct stat* info, char* filename, char* d_name) {
@@ -241,4 +252,160 @@ char* getFileType(char* path) {
     exit(-2);
   }
   exit(-2);
+}
+
+char* getMD5(char* path){
+  int fd[2];
+  int n;
+  pid_t pid;
+
+  if (pipe(fd) < 0)
+    printf("failed pipe\n");
+
+  pid = fork();
+
+  if (pid > 0) {
+    close(fd[WRITE]);
+    char tmp[100];
+    char tmp2[100];
+    int i;
+    int length = 0;
+    char* type;
+
+    if ((n = read(fd[READ], tmp, 100)) < 0) {
+      printf("fail to read %d\n", n);
+      exit(-2);
+    }
+
+    for (i = 0; i < 100; i++) {
+      if (tmp[i] == '\0' || tmp[i] == ' ') {
+        break;
+      } else {
+        tmp2[length] = tmp[i];
+        length++;
+      }
+    }
+
+    type = (char*)malloc(length * sizeof(char));
+    strcpy(type, tmp2);
+    return type;
+  } else if (pid == 0) {
+    close(fd[READ]);
+    if (dup2(fd[WRITE], STDOUT_FILENO) == -1) {
+      printf("failed dup2\n");
+      exit(-2);
+    }
+    execlp("md5sum", "md5sum", path, NULL);
+    printf("failed exec\n");
+    exit(-2);
+  } else {
+    printf("failed fork\n");
+    exit(-2);
+  }
+  exit(-2);
+
+}
+
+char* getSHA1(char* path){
+  int fd[2];
+  int n;
+  pid_t pid;
+
+  if (pipe(fd) < 0)
+    printf("failed pipe\n");
+
+  pid = fork();
+
+  if (pid > 0) {
+    close(fd[WRITE]);
+    char tmp[100];
+    char tmp2[100];
+    int i;
+    int length = 0;
+    char* type;
+
+    if ((n = read(fd[READ], tmp, 100)) < 0) {
+      printf("fail to read %d\n", n);
+      exit(-2);
+    }
+
+    for (i = 0; i < 100; i++) {
+      if (tmp[i] == '\0' || tmp[i] == ' ') {
+        break;
+      } else {
+        tmp2[length] = tmp[i];
+        length++;
+      }
+    }
+
+    type = (char*)malloc(length * sizeof(char));
+    strcpy(type, tmp2);
+    return type;
+  } else if (pid == 0) {
+    close(fd[READ]);
+    if (dup2(fd[WRITE], STDOUT_FILENO) == -1) {
+      printf("failed dup2\n");
+      exit(-2);
+    }
+    execlp("sha1sum", "sha1sum", path, NULL);
+    printf("failed exec\n");
+    exit(-2);
+  } else {
+    printf("failed fork\n");
+    exit(-2);
+  }
+  exit(-2);
+
+}
+
+char* getSHA256(char* path){
+  int fd[2];
+  int n;
+  pid_t pid;
+
+  if (pipe(fd) < 0)
+    printf("failed pipe\n");
+
+  pid = fork();
+
+  if (pid > 0) {
+    close(fd[WRITE]);
+    char tmp[100];
+    char tmp2[100];
+    int i;
+    int length = 0;
+    char* type;
+
+    if ((n = read(fd[READ], tmp, 100)) < 0) {
+      printf("fail to read %d\n", n);
+      exit(-2);
+    }
+
+    for (i = 0; i < 100; i++) {
+      if (tmp[i] == '\0' || tmp[i] == ' ') {
+        break;
+      } else {
+        tmp2[length] = tmp[i];
+        length++;
+      }
+    }
+
+    type = (char*)malloc(length * sizeof(char));
+    strcpy(type, tmp2);
+    return type;
+  } else if (pid == 0) {
+    close(fd[READ]);
+    if (dup2(fd[WRITE], STDOUT_FILENO) == -1) {
+      printf("failed dup2\n");
+      exit(-2);
+    }
+    execlp("sha256sum", "sha256sum", path, NULL);
+    printf("failed exec\n");
+    exit(-2);
+  } else {
+    printf("failed fork\n");
+    exit(-2);
+  }
+  exit(-2);
+
 }
