@@ -131,18 +131,18 @@ void file_info(char* filename, char* d_name) {
   // SIZE
   int size = (int)info.st_size;
   printf(",%d", size);
-  
+
   // ACCESS
   char access[3];
   getAccess(access, info.st_mode);
-  printf(",%s", access);  
-  
+  printf(",%s", access);
+
   // ACCESS DATE
   char* access_time = (char*)malloc(21 * sizeof(char));
   getDate(access_time, info.st_atime);
   printf(",%s", access_time);
   free(access_time);
-  
+
   // MODIFICATION DATE
   char* mod_time = (char*)malloc(21 * sizeof(char));
   getDate(mod_time, info.st_mtime);
@@ -151,19 +151,22 @@ void file_info(char* filename, char* d_name) {
 
   // MD5
   char* md5;
-  getMD5(filename);
+  md5 = getMD5(filename);
   printf(",%s", md5);
+  free(md5);
 
   // SHA1
   char* sha1;
-  getSHA1(filename);
+  sha1 = getSHA1(filename);
   printf(",%s", sha1);
-  
+  free(sha1);
+
   // SHA256
   char* sha256;
-  getSHA256(filename);
+  sha256 = getSHA256(filename);
   printf(",%s", sha256);
-  
+  free(sha256);
+
   printf("\n");
 }
 
@@ -391,6 +394,7 @@ char* getSHA256(char* path){
     }
 
     type = (char*)malloc(length * sizeof(char));
+    memset(type, '\0', length);
     strcpy(type, tmp2);
     return type;
   } else if (pid == 0) {
