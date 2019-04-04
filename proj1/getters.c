@@ -59,13 +59,14 @@ char* getFileType(char* path) {
       }
     }
 
-    for (i; i < 100; i++) {
+    while (i < 100) {
       if (tmp[i] == '\0' || tmp[i] == ',') {
         break;
       } else {
         tmp2[length] = tmp[i];
         length++;
       }
+      i++;
     }
 
     type = (char*)malloc(length * sizeof(char));

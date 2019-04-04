@@ -100,7 +100,7 @@ void dir_info(char* dirname) {
           if (!isDir(filename)) {
             file_info(filename, dirent->d_name);
           } else if (arg[0]) {  // RECURSIVE
-            rec_dir(argc_s, argv_s, filename);
+            rec_dir(filename);
           }
           free(filename);
         } else {
@@ -184,7 +184,6 @@ void getArgs(int argc, char** argv) {
       i++;
     } else if (strcmp(ar, "-o") == 0) {
       arg[2] = i + 1;
-      printf("%s\n", argv[i]);
       i++;
     } else if (strcmp(ar, "-v") == 0) {
       arg[3] = 1;
@@ -193,16 +192,17 @@ void getArgs(int argc, char** argv) {
 }
 
 void getHash(char* type) {
-  printf("%s\n", type);
   size_t len = strlen(type);
   char tmp[10];
   char* tmp2;
   int size = 0;
   int i = 0;
 
-  while ((unsigned)i < len) {
+  while ((unsigned)i <= len) {
     if (type[i] == ',' || type[i] == '\0') {
       tmp2 = (char*)malloc(size * sizeof(char));
+      strcpy(tmp2, tmp);
+      printf("%s\n", tmp2);
       if (strcmp(tmp2, "md5") == 0)
         hash[0] = 1;
       else if (strcmp(tmp2, "sha1") == 0)
@@ -235,13 +235,13 @@ void rec_dir(char* path) {
     return;
   } else if (pid == 0) {
     /* char* argv[argc_s];
-    
+
     for(int i = 0; i < argc_s - 1; i++){
       argv[i] = argv_s[i];
     }
     argv[argc_s-1] = path; */
 
-    argv_s[argc - 1] = path;
+    argv_s[argc_s - 1] = path;
     execvp("./foresinc", argv_s);
 
     printf("failed exec\n");
