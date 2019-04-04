@@ -180,10 +180,11 @@ void getArgs(int argc, char** argv) {
     if (strcmp(ar, "-r") == 0) {
       arg[0] = 1;
     } else if (strcmp(ar, "-h") == 0) {
-      arg[1] = i + 2;
+      arg[1] = i + 1;
       i++;
     } else if (strcmp(ar, "-o") == 0) {
-      arg[2] = i + 2;
+      arg[2] = i + 1;
+      printf("%s\n", argv[i]);
       i++;
     } else if (strcmp(ar, "-v") == 0) {
       arg[3] = 1;
@@ -192,6 +193,7 @@ void getArgs(int argc, char** argv) {
 }
 
 void getHash(char* type) {
+  printf("%s\n", type);
   size_t len = strlen(type);
   char tmp[10];
   char* tmp2;
