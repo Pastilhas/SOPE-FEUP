@@ -200,7 +200,9 @@ void getHash(char* type) {
 
   while ((unsigned)i <= len) {
     if (type[i] == ',' || type[i] == '\0') {
+      size++;
       tmp2 = (char*)malloc(size * sizeof(char));
+      memset(tmp2, '\0', size * sizeof(char));
       strcpy(tmp2, tmp);
       printf("%s\n", tmp2);
       if (strcmp(tmp2, "md5") == 0)
@@ -214,7 +216,7 @@ void getHash(char* type) {
       memset(tmp, '\0', 10);
     } else {
       size++;
-      tmp[i] = type[i];
+      tmp[size] = type[i];
     }
     i++;
   }
