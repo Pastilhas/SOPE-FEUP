@@ -27,10 +27,13 @@ void dir_info(char* dirname);
 void file_info(char* filename, char* d_name);
 void getArgs(int argc, char** argv);
 void getHash(char* type);
-void rec_dir(int argc, char** argv, char* path);
+FILE* outputf(char* filename);
+void rec_dir(char* path);
 
 static int arg[4];
 static int hash[3];
+static int argc_s;
+static char** argv_s;
 
 int main(int argc, char** argv) {
   // forensic -r -h [type] -o [file] -v [file]
@@ -44,10 +47,16 @@ int main(int argc, char** argv) {
     exit(argc);
   }
 
-  getArgs(argc, argv);
-  if (argv[1]) getHash(argv[arg[1]]);
+  argc_s = argc;
+  argv_s = argv;
 
-  char* log_name = getenv("LOGFILENAME");
+  getArgs(argc, argv);                // get args and change arg flags
+  if (arg[1]) getHash(argv[arg[1]]);  // set hash flags
+  FILE* file;
+  if (arg[2]) {  // set outputfile
+    file = outputf(argv[arg[2]]);
+  }
+  // char* log_name = getenv("LOGFILENAME");
   char* file_name;
 
   if (isRoot(argv[argc - 1])) {
@@ -64,6 +73,7 @@ int main(int argc, char** argv) {
   } else {
     file_info(file_name, basename(file_name));
   }
+  if (arg[2]) fclose(file);
 
   exit(0);
 }
@@ -89,8 +99,8 @@ void dir_info(char* dirname) {
           strcat(filename, dirent->d_name);
           if (!isDir(filename)) {
             file_info(filename, dirent->d_name);
-          } else if (arg[0]) {
-            rec_dir(filename);
+          } else if (arg[0]) {  // RECURSIVE
+            rec_dir(argc_s, argv_s, filename);
           }
           free(filename);
         } else {
@@ -140,21 +150,23 @@ void file_info(char* filename, char* d_name) {
   printf(",%s", access_time);
   free(mod_time);
 
-  // MD5
-  char* md5;
-  getMD5(filename);
-  printf(",%s", md5);
+  if (hash[0]) {  // MD5
+    char* md5 = "";
+    getMD5(filename);
+    printf(",%s", md5);
+  }
 
-  // SHA1
-  char* sha1;
-  getSHA1(filename);
-  printf(",%s", sha1);
+  if (hash[1]) {  // SHA1
+    char* sha1 = "";
+    getSHA1(filename);
+    printf(",%s", sha1);
+  }
 
-  // SHA256
-  char* sha256;
-  getSHA256(filename);
-  printf(",%s", sha256);
-
+  if (hash[2]) {  // SHA256
+    char* sha256 = "";
+    getSHA256(filename);
+    printf(",%s", sha256);
+  }
   printf("\n");
 }
 
@@ -165,15 +177,15 @@ void getArgs(int argc, char** argv) {
 
   for (int i = 0; i < argc; i++) {
     char* ar = argv[i];
-    if (ar == "-r") {
+    if (strcmp(ar, "-r") == 0) {
       arg[0] = 1;
-    } else if (ar == "-h") {
+    } else if (strcmp(ar, "-h") == 0) {
       arg[1] = i + 2;
       i++;
-    } else if (ar == "-o") {
+    } else if (strcmp(ar, "-o") == 0) {
       arg[2] = i + 2;
       i++;
-    } else if (ar == "-v") {
+    } else if (strcmp(ar, "-v") == 0) {
       arg[3] = 1;
     }
   }
@@ -181,17 +193,20 @@ void getArgs(int argc, char** argv) {
 
 void getHash(char* type) {
   size_t len = strlen(type);
-  char* tmp[10];
+  char tmp[10];
   char* tmp2;
   int size = 0;
   int i = 0;
 
-  for (i; i < len; i++) {
+  while ((unsigned)i < len) {
     if (type[i] == ',' || type[i] == '\0') {
       tmp2 = (char*)malloc(size * sizeof(char));
-      if(strcmp(tmp2, "md5") == 0)  hash[0] = 1;
-      else if(strcmp(tmp2, "sha1") == 0)  hash[1] = 1;
-      else if(strcmp(tmp2, "sha256") == 0)  hash[2] = 1;
+      if (strcmp(tmp2, "md5") == 0)
+        hash[0] = 1;
+      else if (strcmp(tmp2, "sha1") == 0)
+        hash[1] = 1;
+      else if (strcmp(tmp2, "sha256") == 0)
+        hash[2] = 1;
       free(tmp2);
       size = 0;
       memset(tmp, '\0', 10);
@@ -199,19 +214,34 @@ void getHash(char* type) {
       size++;
       tmp[i] = type[i];
     }
+    i++;
   }
 }
 
-void rec_dir(int argc, char** argv, char* path) {
-  int n;
+FILE* outputf(char* filename) {
+  FILE* file = fopen(filename, "w+");
+  dup2(fileno(file), STDOUT_FILENO);
+  return file;
+}
+
+void rec_dir(char* path) {
   pid_t pid;
 
   pid = fork();
 
   if (pid > 0) {
+    return;
   } else if (pid == 0) {
-    argv[argc - 1] = path;
-    execvp("./foresinc", argv);
+    /* char* argv[argc_s];
+    
+    for(int i = 0; i < argc_s - 1; i++){
+      argv[i] = argv_s[i];
+    }
+    argv[argc_s-1] = path; */
+
+    argv_s[argc - 1] = path;
+    execvp("./foresinc", argv_s);
+
     printf("failed exec\n");
     exit(-2);
   } else {
