@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
     file = outputf(argv[arg[2]]);
 
   if (arg[3]) {
-    char* log_name = getenv("LOGFILENAME");
+    //char* log_name = getenv("LOGFILENAME");
   }
   char* file_name;
 
@@ -102,7 +102,7 @@ void dir_info(char* dirname) {
         // NEW ENTRY
         if (filename != NULL) {
           strcpy(filename, dirname);
-          if (dirname[strlen(dirname) - 1] != '/') 
+          if (dirname[strlen(dirname) - 1] != '/')
             strcat(filename, "/");
           strcat(filename, dirent->d_name);
 
@@ -113,6 +113,7 @@ void dir_info(char* dirname) {
 
             // IF DIR
           } else if (arg[0]) {
+            dprintf(STDERR_FILENO, "New dir found %s \n", filename);
             rec_dir(filename);
           }
           free(filename);
@@ -133,35 +134,44 @@ void dir_info(char* dirname) {
 void file_info(char* filename, char* d_name) {
   struct stat info;
   get_stat(&info, filename, d_name);
-
+  char final[200];
+  char tmp[100];
   // NAME
-  printf("%s", d_name);
+  //dprintf(STDOUT_FILENO, "%s", d_name);
+  strcpy(final, d_name);
 
   // TYPE
   char* type;
   type = getFileType(filename);
-  dprintf(STDERR_FILENO, ",%s", type);
+  //dprintf(STDOUT_FILENO, ",%s", type);
+  strcat(final, ",");
+  strcat(final, type);
   free(type);
 
   // SIZE
   int size = (int)info.st_size;
-  dprintf(STDERR_FILENO, ",%d", size);
+  //dprintf(STDOUT_FILENO, ",%d", size);
+  sprintf(tmp, "%d", size);
+  strcat(final, tmp);
 
   // ACCESS
   char access[3];
   getAccess(access, info.st_mode);
-  dprintf(STDERR_FILENO, ",%s", access);
+  //dprintf(STDOUT_FILENO, ",%s", access);
+  strcat(final, access);
 
   // ACCESS DATE
   char* access_time = (char*)malloc(21 * sizeof(char));
   getDate(access_time, info.st_atime);
-  dprintf(STDERR_FILENO, ",%s", access_time);
+  //dprintf(STDOUT_FILENO, ",%s", access_time);
+  strcat(final, access_time);
   free(access_time);
 
   // MODIFICATION DATE
   char* mod_time = (char*)malloc(21 * sizeof(char));
   getDate(mod_time, info.st_mtime);
-  dprintf(STDERR_FILENO, ",%s", access_time);
+  //dprintf(STDOUT_FILENO, ",%s", access_time);
+  strcat(final, mod_time);
   free(mod_time);
 
   // HASH
@@ -169,22 +179,25 @@ void file_info(char* filename, char* d_name) {
     if (hash[0]) {  // MD5
       char* md5 = "";
       md5 = getMD5(filename);
-      dprintf(STDERR_FILENO, ",%s", md5);
+      //dprintf(STDOUT_FILENO, ",%s", md5);
+      strcat(final, md5);
     }
 
     if (hash[1]) {  // SHA1
       char* sha1 = "";
       sha1 = getSHA1(filename);
-      dprintf(STDERR_FILENO, ",%s", sha1);
+      //dprintf(STDOUT_FILENO, ",%s", sha1);
+      strcat(final, sha1);
     }
 
     if (hash[2]) {  // SHA256
       char* sha256 = "";
       sha256 = getSHA256(filename);
-      dprintf(STDERR_FILENO, ",%s", sha256);
+      //dprintf(STDOUT_FILENO, ",%s", sha256);
+      strcat(final, sha256);
     }
   }
-  dprintf(STDERR_FILENO, "\n");
+  dprintf(STDOUT_FILENO, "%s\n", final);
 }
 
 void getArgs(int argc, char** argv) {
