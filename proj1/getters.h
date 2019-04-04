@@ -21,3 +21,5 @@ char* getFileType(char* path);
 char* getMD5(char* path);
 char* getSHA1(char* path);
 char* getSHA256(char* path);
+
+char* itoa(int n);

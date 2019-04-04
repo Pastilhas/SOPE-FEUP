@@ -255,3 +255,20 @@ char* getSHA256(char* path){
   exit(-2);
 
 }
+
+char* itoa(int n){
+  char tmp[100];
+  char* tmp2;
+  int size = 0;
+
+  while (n > 0){
+    tmp[size] = n % 10;
+    n /= 10;
+    size++;
+  }
+  tmp[size] = '\0';
+  tmp2 = (char*)malloc(size*sizeof(char));
+  strcpy(tmp2, tmp);
+
+  return tmp2;
+}
