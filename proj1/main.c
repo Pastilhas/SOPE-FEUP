@@ -161,7 +161,7 @@ void file_info(char *filename, char *d_name)
   struct stat info;
   get_stat(&info, filename, d_name);
   char final[200];
-  char tmp[100];
+
   // NAME
   // dprintf(STDOUT_FILENO, "%s", d_name);
   strcpy(final, d_name);
@@ -175,7 +175,8 @@ void file_info(char *filename, char *d_name)
   free(type);
 
   // SIZE
-  char* size_str = itoa((int)info.st_size);
+  int size = (int)info.st_size;
+  char* size_str = itoa(size);
   // dprintf(STDOUT_FILENO, ",%d", size);
   strcat(final, ",");
   strcat(final, size_str);
@@ -209,29 +210,32 @@ void file_info(char *filename, char *d_name)
   {
     if (hash[0])
     { // MD5
-      char *md5 = "";
+      char *md5;
       md5 = getMD5(filename);
       // dprintf(STDOUT_FILENO, ",%s", md5);
       strcat(final, ",");
       strcat(final, md5);
+      free(md5);
     }
 
     if (hash[1])
     { // SHA1
-      char *sha1 = "";
+      char *sha1;
       sha1 = getSHA1(filename);
       // dprintf(STDOUT_FILENO, ",%s", sha1);
       strcat(final, ",");
       strcat(final, sha1);
+      free(sha1);
     }
 
     if (hash[2])
     { // SHA256
-      char *sha256 = "";
+      char *sha256;
       sha256 = getSHA256(filename);
       // dprintf(STDOUT_FILENO, ",%s", sha256);
       strcat(final, ",");
       strcat(final, sha256);
+      free(sha256);
     }
   }
   dprintf(STDOUT_FILENO, "%s\n", final);

@@ -43,20 +43,13 @@ char* getFileType(char* path) {
     close(fd[WRITE]);
     char tmp[100];
     char tmp2[100];
-    int i;
+    int i = 0;
     int length = 0;
     char* type;
 
     if ((n = read(fd[READ], tmp, 100)) < 0) {
       printf("fail to read %d\n", n);
       exit(-2);
-    }
-
-    for (i = 0; i < 100; i++) {
-      if (tmp[i] == ' ') {
-        i++;
-        break;
-      }
     }
 
     while (i < 100) {
@@ -81,7 +74,7 @@ char* getFileType(char* path) {
       printf("failed dup2\n");
       exit(-2);
     }
-    execlp("file", "file", path, NULL);
+    execlp("file", "file", "-b", path, NULL);
     printf("failed exec\n");
     exit(-2);
   } else {
