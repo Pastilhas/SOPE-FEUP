@@ -27,7 +27,7 @@ void dir_info(char* dirname);
 void file_info(char* filename, char* d_name);
 void getArgs(int argc, char** argv);
 void getHash(char* type);
-void outputf(char* filename);
+FILE* outputf(char* filename);
 void rec_dir(char* path);
 
 static int arg[4];
@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
 
   // OUTPUT FILE
   if (arg[2])
-    outputf(argv[arg[2]]);
+    file = outputf(argv[arg[2]]);
 
   if (arg[3]) {
     char* log_name = getenv("LOGFILENAME");
@@ -238,10 +238,11 @@ void getHash(char* type) {
   }
 }
 
-void outputf(char* filename) {
+FILE* outputf(char* filename) {
   FILE* file = fopen(filename, "w+");
   if (file == NULL) exit(-3);
   dup2(fileno(file), STDOUT_FILENO);
+  return file;
 }
 
 void rec_dir(char* path) {
