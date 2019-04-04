@@ -19,10 +19,12 @@ int isDir(char* line) {
   return S_ISDIR(info.st_mode);
 }
 
-void getAccess(char access[3], mode_t mode) {
+char* getAccess(mode_t mode) {
+  char* access = (char*)malloc(4*sizeof(char));
   access[0] = (mode & S_IRUSR) ? 'r' : '-';
   access[1] = (mode & S_IWUSR) ? 'w' : '-';
   access[2] = (mode & S_IXUSR) ? 'x' : '-';
+  return access;
 }
 
 void getDate(char* str, time_t date) {
@@ -53,7 +55,7 @@ char* getFileType(char* path) {
     }
 
     while (i < 100) {
-      if (tmp[i] == '\0' || tmp[i] == ',') {
+      if (tmp[i] == '\0' || tmp[i] == ',' || tmp[i] == '\n') {
         tmp2[length] = '\0';
         length++;
         break;

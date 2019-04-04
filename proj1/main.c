@@ -163,13 +163,11 @@ void file_info(char *filename, char *d_name)
   char final[200];
 
   // NAME
-  // dprintf(STDOUT_FILENO, "%s", d_name);
   strcpy(final, d_name);
 
   // TYPE
   char *type;
   type = getFileType(filename);
-  // dprintf(STDOUT_FILENO, ",%s", type);
   strcat(final, ",");
   strcat(final, type);
   free(type);
@@ -177,22 +175,19 @@ void file_info(char *filename, char *d_name)
   // SIZE
   int size = (int)info.st_size;
   char* size_str = itoa(size);
-  // dprintf(STDOUT_FILENO, ",%d", size);
   strcat(final, ",");
   strcat(final, size_str);
   free(size_str);
 
   // ACCESS
-  char access[3];
-  getAccess(access, info.st_mode);
-  // dprintf(STDOUT_FILENO, ",%s", access);
+  char* access = getAccess(info.st_mode);
   strcat(final, ",");
   strcat(final, access);
+  free(access);
 
   // ACCESS DATE
   char *access_time = (char *)malloc(21 * sizeof(char));
   getDate(access_time, info.st_atime);
-  // dprintf(STDOUT_FILENO, ",%s", access_time);
   strcat(final, ",");
   strcat(final, access_time);
   free(access_time);
@@ -200,7 +195,6 @@ void file_info(char *filename, char *d_name)
   // MODIFICATION DATE
   char *mod_time = (char *)malloc(21 * sizeof(char));
   getDate(mod_time, info.st_mtime);
-  // dprintf(STDOUT_FILENO, ",%s", access_time);
   strcat(final, ",");
   strcat(final, mod_time);
   free(mod_time);
@@ -212,7 +206,6 @@ void file_info(char *filename, char *d_name)
     { // MD5
       char *md5;
       md5 = getMD5(filename);
-      // dprintf(STDOUT_FILENO, ",%s", md5);
       strcat(final, ",");
       strcat(final, md5);
       free(md5);
@@ -222,7 +215,6 @@ void file_info(char *filename, char *d_name)
     { // SHA1
       char *sha1;
       sha1 = getSHA1(filename);
-      // dprintf(STDOUT_FILENO, ",%s", sha1);
       strcat(final, ",");
       strcat(final, sha1);
       free(sha1);
@@ -232,7 +224,6 @@ void file_info(char *filename, char *d_name)
     { // SHA256
       char *sha256;
       sha256 = getSHA256(filename);
-      // dprintf(STDOUT_FILENO, ",%s", sha256);
       strcat(final, ",");
       strcat(final, sha256);
       free(sha256);

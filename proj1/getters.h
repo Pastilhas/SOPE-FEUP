@@ -15,7 +15,7 @@
 void get_stat(struct stat* info, char* filename, char* d_name);
 int isDir(char* line);
 int isRoot(char* line);
-void getAccess(char access[3], mode_t mode);
+char* getAccess(mode_t mode);
 void getDate(char* str, time_t date);
 char* getFileType(char* path);
 char* getMD5(char* path);
