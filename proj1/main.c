@@ -217,7 +217,6 @@ void getHash(char* type) {
     } else {
       tmp[size] = type[i];
       size++;
-      printf("%s\n", tmp);
     }
     i++;
   }
@@ -245,7 +244,7 @@ void rec_dir(char* path) {
     argv[argc_s-1] = path; */
 
     argv_s[argc_s - 1] = path;
-    execvp("./foresinc", argv_s);
+    execvp("./main", argv_s);
 
     printf("failed exec\n");
     exit(-2);

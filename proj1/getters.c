@@ -61,6 +61,8 @@ char* getFileType(char* path) {
 
     while (i < 100) {
       if (tmp[i] == '\0' || tmp[i] == ',') {
+        tmp2[length] = '\0';
+        length++;
         break;
       } else {
         tmp2[length] = tmp[i];
@@ -70,6 +72,7 @@ char* getFileType(char* path) {
     }
 
     type = (char*)malloc(length * sizeof(char));
+    memset(type, '\0', length*sizeof(char));
     strcpy(type, tmp2);
     return type;
   } else if (pid == 0) {
@@ -113,7 +116,7 @@ char* getMD5(char* path){
 
     for (i = 0; i < 100; i++) {
       if (tmp[i] == '\0' || tmp[i] == ' ') {
-        tmp2[length] = tmp[i];
+        tmp2[length] = '\0';
         length++;
         break;
       } else {
@@ -168,7 +171,7 @@ char* getSHA1(char* path){
 
     for (i = 0; i < 100; i++) {
       if (tmp[i] == '\0' || tmp[i] == ' ') {
-        tmp2[length] = tmp[i];
+        tmp2[length] = '\0';
         length++;
         break;
       } else {
@@ -223,6 +226,7 @@ char* getSHA256(char* path){
 
     for (i = 0; i < 100; i++) {
       if (tmp[i] == '\0' || tmp[i] == ' ') {
+        tmp2[length] = '\0';
         length++;
         break;
       } else {
