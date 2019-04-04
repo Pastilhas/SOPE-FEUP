@@ -113,6 +113,8 @@ char* getMD5(char* path){
 
     for (i = 0; i < 100; i++) {
       if (tmp[i] == '\0' || tmp[i] == ' ') {
+        tmp2[length] = tmp[i];
+        length++;
         break;
       } else {
         tmp2[length] = tmp[i];
@@ -121,6 +123,7 @@ char* getMD5(char* path){
     }
 
     type = (char*)malloc(length * sizeof(char));
+    memset(type, '\0', length*sizeof(char));
     strcpy(type, tmp2);
     return type;
   } else if (pid == 0) {
@@ -165,6 +168,8 @@ char* getSHA1(char* path){
 
     for (i = 0; i < 100; i++) {
       if (tmp[i] == '\0' || tmp[i] == ' ') {
+        tmp2[length] = tmp[i];
+        length++;
         break;
       } else {
         tmp2[length] = tmp[i];
@@ -173,6 +178,7 @@ char* getSHA1(char* path){
     }
 
     type = (char*)malloc(length * sizeof(char));
+    memset(type, '\0', length*sizeof(char));
     strcpy(type, tmp2);
     return type;
   } else if (pid == 0) {
@@ -217,6 +223,7 @@ char* getSHA256(char* path){
 
     for (i = 0; i < 100; i++) {
       if (tmp[i] == '\0' || tmp[i] == ' ') {
+        length++;
         break;
       } else {
         tmp2[length] = tmp[i];
@@ -225,6 +232,7 @@ char* getSHA256(char* path){
     }
 
     type = (char*)malloc(length * sizeof(char));
+    memset(type, '\0', length*sizeof(char));
     strcpy(type, tmp2);
     return type;
   } else if (pid == 0) {

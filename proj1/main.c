@@ -149,23 +149,24 @@ void file_info(char* filename, char* d_name) {
   getDate(mod_time, info.st_mtime);
   printf(",%s", access_time);
   free(mod_time);
+  if(arg[1]){
+    if (hash[0]) {  // MD5
+      char* md5 = "";
+      md5 = getMD5(filename);
+      printf(",%s", md5);
+    }
 
-  if (hash[0]) {  // MD5
-    char* md5 = "";
-    getMD5(filename);
-    printf(",%s", md5);
-  }
+    if (hash[1]) {  // SHA1
+      char* sha1 = "";
+      sha1 = getSHA1(filename);
+      printf(",%s", sha1);
+    }
 
-  if (hash[1]) {  // SHA1
-    char* sha1 = "";
-    getSHA1(filename);
-    printf(",%s", sha1);
-  }
-
-  if (hash[2]) {  // SHA256
-    char* sha256 = "";
-    getSHA256(filename);
-    printf(",%s", sha256);
+    if (hash[2]) {  // SHA256
+      char* sha256 = "";
+      sha256 = getSHA256(filename);
+     printf(",%s", sha256);
+    }
   }
   printf("\n");
 }
@@ -204,7 +205,6 @@ void getHash(char* type) {
       tmp2 = (char*)malloc(size * sizeof(char));
       memset(tmp2, '\0', size * sizeof(char));
       strcpy(tmp2, tmp);
-      printf("%s\n", tmp2);
       if (strcmp(tmp2, "md5") == 0)
         hash[0] = 1;
       else if (strcmp(tmp2, "sha1") == 0)
@@ -215,8 +215,9 @@ void getHash(char* type) {
       size = 0;
       memset(tmp, '\0', 10);
     } else {
-      size++;
       tmp[size] = type[i];
+      size++;
+      printf("%s\n", tmp);
     }
     i++;
   }
