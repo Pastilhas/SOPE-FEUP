@@ -27,23 +27,22 @@ void dir_info(char* dirname);
 void file_info(char* filename, char* d_name);
 void getArgs(int argc, char** argv);
 void getHash(char* type);
-FILE* outputf(char* filename);
+void outputf(char* filename);
 void rec_dir(char* path);
 
 static int arg[4];
 static int hash[3];
 static int argc_s;
 static char** argv_s;
-static FILE* out_s;
 
 int main(int argc, char** argv) {
   // forensic -r -h [type] -o [file] -v [file]
 
   if (argc < 2 || argc > 8) {
     if (argc < 2) {
-      dprintf(STDOUT_FILENO, "Not enough arguments.\n");
+      dprintf(STDERR_FILENO, "Not enough arguments.\n");
     } else {
-      dprintf(STDOUT_FILENO, "Too many arguments.\n");
+      dprintf(STDERR_FILENO, "Too many arguments.\n");
     }
     exit(argc);
   }
@@ -59,11 +58,8 @@ int main(int argc, char** argv) {
   FILE* file;
 
   // OUTPUT FILE
-  if (arg[2]) {
-    out_s = outputf(argv[arg[2]]);
-  } else {
-    out_s = STDOUT_FILENO;
-  }
+  if (arg[2])
+    outputf(argv[arg[2]]);
 
   if (arg[3]) {
     char* log_name = getenv("LOGFILENAME");
@@ -95,7 +91,7 @@ void dir_info(char* dirname) {
   struct dirent* dirent;
 
   if (dir_ptr == NULL) {
-    dprintf(STDOUT_FILENO, "Cannot open.\n");
+    dprintf(STDERR_FILENO, "Cannot open.\n");
   } else {
     dirent = readdir(dir_ptr);
     while (dirent != NULL) {
@@ -112,7 +108,7 @@ void dir_info(char* dirname) {
 
           // IF FILE
           if (!isDir(filename)) {
-            dprintf(STDOUT_FILENO, "New file found: %s \n", filename);
+            dprintf(STDERR_FILENO, "New file found: %s \n", filename);
             file_info(filename, dirent->d_name);
 
             // IF DIR
@@ -122,7 +118,7 @@ void dir_info(char* dirname) {
           free(filename);
 
         } else {
-          dprintf(STDOUT_FILENO, "Failed to create file path.\n");
+          dprintf(STDERR_FILENO, "Failed to create file path.\n");
           exit(-1);
         }
       }
@@ -144,28 +140,28 @@ void file_info(char* filename, char* d_name) {
   // TYPE
   char* type;
   type = getFileType(filename);
-  dprintf(out_s, ",%s", type);
+  dprintf(STDERR_FILENO, ",%s", type);
   free(type);
 
   // SIZE
   int size = (int)info.st_size;
-  dprintf(out_s, ",%d", size);
+  dprintf(STDERR_FILENO, ",%d", size);
 
   // ACCESS
   char access[3];
   getAccess(access, info.st_mode);
-  dprintf(out_s, ",%s", access);
+  dprintf(STDERR_FILENO, ",%s", access);
 
   // ACCESS DATE
   char* access_time = (char*)malloc(21 * sizeof(char));
   getDate(access_time, info.st_atime);
-  dprintf(out_s, ",%s", access_time);
+  dprintf(STDERR_FILENO, ",%s", access_time);
   free(access_time);
 
   // MODIFICATION DATE
   char* mod_time = (char*)malloc(21 * sizeof(char));
   getDate(mod_time, info.st_mtime);
-  dprintf(out_s, ",%s", access_time);
+  dprintf(STDERR_FILENO, ",%s", access_time);
   free(mod_time);
 
   // HASH
@@ -173,22 +169,22 @@ void file_info(char* filename, char* d_name) {
     if (hash[0]) {  // MD5
       char* md5 = "";
       md5 = getMD5(filename);
-      dprintf(out_s, ",%s", md5);
+      dprintf(STDERR_FILENO, ",%s", md5);
     }
 
     if (hash[1]) {  // SHA1
       char* sha1 = "";
       sha1 = getSHA1(filename);
-      dprintf(out_s, ",%s", sha1);
+      dprintf(STDERR_FILENO, ",%s", sha1);
     }
 
     if (hash[2]) {  // SHA256
       char* sha256 = "";
       sha256 = getSHA256(filename);
-      dprintf(out_s, ",%s", sha256);
+      dprintf(STDERR_FILENO, ",%s", sha256);
     }
   }
-  dprintf(out_s, "\n");
+  dprintf(STDERR_FILENO, "\n");
 }
 
 void getArgs(int argc, char** argv) {
@@ -242,11 +238,10 @@ void getHash(char* type) {
   }
 }
 
-FILE* outputf(char* filename) {
+void outputf(char* filename) {
   FILE* file = fopen(filename, "w+");
   if (file == NULL) exit(-3);
-  // dup2(fileno(file), STDOUT_FILENO);
-  return file;
+  dup2(fileno(file), STDOUT_FILENO);
 }
 
 void rec_dir(char* path) {
