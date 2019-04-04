@@ -174,10 +174,10 @@ void file_info(char *filename, char *d_name)
 
   // SIZE
   int size = (int)info.st_size;
-  char* size_str = itoa(size);
+  char size_str[20];
+  sprintf(size_str, "%d", size);
   strcat(final, ",");
   strcat(final, size_str);
-  free(size_str);
 
   // ACCESS
   char* access = getAccess(info.st_mode);
