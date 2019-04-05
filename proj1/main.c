@@ -11,14 +11,16 @@
 
 #include "getters.h"
 
-void dir_info(FILE *log, const int arg[4], const int hash[3], char *dirname);
-void file_info(const int arg[4], const int hash[3], char *filename, char *d_name);
+void dir_info(const int arg[4], char *dirname);
+void file_info(const int arg[4], char *filename, char *d_name);
 void getArgs(int arg[4], int argc, char **argv);
-void getHash(int hash[3], char *type);
+void getHash(char *type);
 FILE *outputf(char *filename);
-void rec_dir(FILE *log, const int arg[4], const int hash[3], char *path);
-void log_write(FILE *log, int act, char *description);
+void rec_dir(const int arg[4], char *path);
+void log_write(int act, char *description);
 
+static int hash[3] = {0, 0, 0};
+static FILE *log;
 static struct timespec time1;
 
 static int n_files = 0;
@@ -44,9 +46,7 @@ int main(int argc, char **argv)
     exit(argc);
   }
 
-  int hash[3];
   int arg[4];
-  FILE *log;
   FILE *file;
 
   // ARGUMENTS
@@ -54,7 +54,7 @@ int main(int argc, char **argv)
 
   // HASH FLAGS
   if (arg[1])
-    getHash(hash, argv[arg[1]]);
+    getHash(argv[arg[1]]);
 
   // OUTPUT FILE
   if (arg[2])
@@ -81,7 +81,7 @@ int main(int argc, char **argv)
       strcat(command, argv[i]);
     }
     if (arg[3])
-      log_write(log, COMMAND_LOG, command);
+      log_write(COMMAND_LOG, command);
   }
 
   // FORESINC
@@ -100,11 +100,11 @@ int main(int argc, char **argv)
 
   if (isDir(file_name))
   {
-    dir_info(log, arg, hash, file_name);
+    dir_info(arg, file_name);
   }
   else
   {
-    file_info(arg, hash, file_name, basename(file_name));
+    file_info(arg, file_name, basename(file_name));
   }
 
   if (file)
@@ -126,7 +126,7 @@ int main(int argc, char **argv)
   exit(0);
 }
 
-void dir_info(FILE *log, const int arg[4], const int hash[3], char *dirname)
+void dir_info(const int arg[4], char *dirname)
 {
   DIR *dir_ptr = opendir(dirname);
   struct dirent *dirent;
@@ -158,8 +158,8 @@ void dir_info(FILE *log, const int arg[4], const int hash[3], char *dirname)
           {
             n_files++;
             if (arg[3])
-              log_write(log, FILE_LOG, dirent->d_name);
-            file_info(arg, hash, filename, dirent->d_name);
+              log_write(FILE_LOG, dirent->d_name);
+            file_info(arg, filename, dirent->d_name);
 
             // IF DIR
           }
@@ -168,7 +168,7 @@ void dir_info(FILE *log, const int arg[4], const int hash[3], char *dirname)
             n_dirs++;
             dprintf(STDERR_FILENO, "New dir: %d/%d dir/files at this time.\n",
                     n_dirs, n_files);
-            rec_dir(log, arg, hash, filename);
+            rec_dir(arg, filename);
           }
           free(filename);
         }
@@ -186,11 +186,11 @@ void dir_info(FILE *log, const int arg[4], const int hash[3], char *dirname)
   closedir(dir_ptr);
 }
 
-void file_info(const int arg[4], const int hash[3], char *filename, char *d_name)
+void file_info(const int arg[4], char *filename, char *d_name)
 {
   struct stat info;
   get_stat(&info, filename, d_name);
-  char final[200];
+  char final[260];
 
   // NAME
   strcpy(final, d_name);
@@ -292,19 +292,19 @@ void getArgs(int arg[4], int argc, char **argv)
   }
 }
 
-void getHash(int hash[3], char *type)
+void getHash(char *type)
 {
   size_t len = strlen(type);
   char tmp[10];
   char *tmp2;
   int size = 0;
   int i = 0;
+  memset(tmp, '\0', 10);
 
   while ((unsigned)i <= len)
   {
     if (type[i] == ',' || type[i] == '\0')
     {
-      size++;
       tmp2 = (char *)malloc(size * sizeof(char));
       memset(tmp2, '\0', size * sizeof(char));
       strcpy(tmp2, tmp);
@@ -336,7 +336,7 @@ FILE *outputf(char *filename)
   return file;
 }
 
-void rec_dir(FILE *log, const int arg[4], const int hash[3], char *path)
+void rec_dir(const int arg[4], char *path)
 {
   pid_t pid;
 
@@ -348,7 +348,7 @@ void rec_dir(FILE *log, const int arg[4], const int hash[3], char *path)
   }
   else if (pid == 0)
   {
-    dir_info(log, arg, hash, path);
+    dir_info(arg, path);
     exit(0);
   }
   else
@@ -358,7 +358,7 @@ void rec_dir(FILE *log, const int arg[4], const int hash[3], char *path)
   }
 }
 
-void log_write(FILE *log, int act, char *description)
+void log_write(int act, char *description)
 {
   char msg[300];
 
