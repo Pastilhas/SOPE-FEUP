@@ -307,7 +307,7 @@ void rec_dir(char *path) {
 
 void log_write(int act, char *description) {
   dprintf(STDERR_FILENO, "log.\n");
-  char msg[100];
+  char msg[300];
 
   // TIME OF LOG
   struct timespec time2;
@@ -322,10 +322,21 @@ void log_write(int act, char *description) {
   // ACTION
   char action[20];
   if (act == COMMAND_LOG)
-    strcpy(action, "COMMAND ");
+    strcpy(action, "COMMAND");
   else if (act == FILE_LOG)
-    strcpy(action, "ANALIZED ");
+    strcpy(action, "ANALIZED");
 
-  sprintf(msg, "%.2f - %d - %s%s", timediff, pid, action, description);
-  fprintf(log, "%s\n", msg);
+  //sprintf(msg, "%.2f - %d - %s%s", timediff, pid, action, description);
+  //fprintf(log, "%s\n", msg);
+ 
+  write(STDERR_FILENO, "o\n", 2);
+  fprintf(log, "%.2f - ", timediff);
+  write(STDERR_FILENO, "o\n", 2);
+  fprintf(log, "%d - ", pid);
+  write(STDERR_FILENO, "o\n", 2);
+  fprintf(log, "%s ", action);
+  write(STDERR_FILENO, "o\n", 2);
+  fprintf(log, "%s\n", description);
+  write(STDERR_FILENO, "o\n", 2);
+
 }
