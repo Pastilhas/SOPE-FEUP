@@ -76,6 +76,10 @@ int main(int argc, char **argv) {
   if (arg[3]) {
     char *log_name = getenv("LOGFILENAME");
     log = fopen(log_name, "w");
+    if (log == NULL) {
+      log = fopen("logs.txt", "w");
+    }
+
     char command[100];
 
     strcat(command, argv[0]);
@@ -326,17 +330,11 @@ void log_write(int act, char *description) {
   else if (act == FILE_LOG)
     strcpy(action, "ANALIZED");
 
-  //sprintf(msg, "%.2f - %d - %s%s", timediff, pid, action, description);
-  //fprintf(log, "%s\n", msg);
- 
-  write(STDERR_FILENO, "o\n", 2);
-  fprintf(log, "%.2f - ", timediff);
-  write(STDERR_FILENO, "o\n", 2);
-  fprintf(log, "%d - ", pid);
-  write(STDERR_FILENO, "o\n", 2);
-  fprintf(log, "%s ", action);
-  write(STDERR_FILENO, "o\n", 2);
-  fprintf(log, "%s\n", description);
-  write(STDERR_FILENO, "o\n", 2);
+  // sprintf(msg, "%.2f - %d - %s%s", timediff, pid, action, description);
+  // fprintf(log, "%s\n", msg);
 
+  fprintf(log, "%.2f - ", timediff);
+  fprintf(log, "%d - ", pid);
+  fprintf(log, "%s ", action);
+  fprintf(log, "%s\n", description);
 }
