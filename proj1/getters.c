@@ -7,7 +7,7 @@ void get_stat(struct stat* info, char* filename, char* d_name) {
 }
 
 int isRoot(char* line) {
-  if (line[0] == '/')
+  if (line[0] == '/' || line[0] == '~')
     return 1;
   return 0;
 }
