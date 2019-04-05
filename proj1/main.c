@@ -23,9 +23,8 @@
 
 #include "getters.h"
 
-#define FILE_LOG 0
-#define DIR_LOG 1
-#define COMMAND_LOG 2
+#define COMMAND_LOG 0
+#define FILE_LOG 1
 
 void dir_info(char *dirname);
 void file_info(char *filename, char *d_name);
@@ -77,6 +76,15 @@ int main(int argc, char **argv) {
   if (arg[3]) {
     char *log_name = getenv("LOGFILENAME");
     log = fopen(log_name, "w");
+    char command[100];
+
+    strcat(command, argv[0]);
+    for (int i = 1; i < argc; i++) {
+      strcat(command, " ");
+      strcat(command, argv[i]);
+    }
+
+    log_write(COMMAND_LOG, command);
   }
 
   // FORESINC
@@ -128,7 +136,8 @@ void dir_info(char *dirname) {
 
           // IF FILE
           if (!isDir(filename)) {
-            dprintf(STDERR_FILENO, "New file found: %s \n", filename);
+            // dprintf(STDERR_FILENO, "New file found: %s \n", filename);
+            log_write(FILE_LOG, dirent->d_name);
             file_info(filename, dirent->d_name);
 
             // IF DIR
@@ -316,8 +325,6 @@ void log_write(int act, char *description) {
     strcpy(action, "COMMAND ");
   else if (act == FILE_LOG)
     strcpy(action, "ANALIZED ");
-  else if (act == DIR_LOG)
-    strcpy(action, "ANALYZING ");
 
   sprintf(msg, "%.2f - %d - %s%s", timediff, pid, action, description);
   fprintf(log, "%s\n", msg);
