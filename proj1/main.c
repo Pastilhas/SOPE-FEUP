@@ -330,11 +330,6 @@ void log_write(int act, char *description) {
   else if (act == FILE_LOG)
     strcpy(action, "ANALIZED");
 
-  // sprintf(msg, "%.2f - %d - %s%s", timediff, pid, action, description);
-  // fprintf(log, "%s\n", msg);
-
-  fprintf(log, "%.2f - ", timediff);
-  fprintf(log, "%d - ", pid);
-  fprintf(log, "%s ", action);
-  fprintf(log, "%s\n", description);
+  sprintf(msg, "%.2f - %d - %s  %s", timediff, pid, action, description);
+  fprintf(log, "%s\n", msg);
 }
