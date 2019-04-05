@@ -14,6 +14,9 @@
 #define READ 0
 #define WRITE 1
 
+#define COMMAND_LOG 0
+#define FILE_LOG 1
+
 void get_stat(struct stat *info, char *filename, char *d_name);
 int isDir(char *line);
 int isRoot(char *line);

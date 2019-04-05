@@ -1,49 +1,28 @@
 ﻿/* Operative Systems Project
  * by Joao Campos
- *
  * 18/03/2019
- */
-
-/* Objetivos:
- * Percorrer sistema de ficheiros
- * Recolher/Criar informação sobre ficheiros
- * Apresentar a informação
- * Utilizador escolhe o diretório/ficheiro a ser lido
- *                    o ficheiro onde é colocada a informação
- *                    o local de geração de log files
- * Interrupção da execução a comando do utilizador
- */
-
-/* foresinc
- * [-r]   analisar todos os ficheiros do diretório e subdiretorios
- * [-h]   calcular has dos ficheiros analisados
- * [-o]   guardar dados no ficheiro
- * [-v]   gerar log files
+ *
+ * foresinc
+ * [-r]                   analisar todos os ficheiros do diretório e subdiretorios
+ * [-h md5/sha1/sha256]   calcular hash dos ficheiros analisados
+ * [-o output]            guardar dados no ficheiro de output
+ * [-v]                   gerar log files
  */
 
 #include "getters.h"
 
-#define COMMAND_LOG 0
-#define FILE_LOG 1
-
-void dir_info(char *dirname);
+void dir_info(const int arg[4], char *dirname);
 void file_info(char *filename, char *d_name);
-void getArgs(int argc, char **argv);
-void getHash(char *type);
+void getArgs(int arg[4], int argc, char **argv);
+void getHash(int hash[3], char *type);
 FILE *outputf(char *filename);
-void rec_dir(char *path);
-void log_write(int act, char *description);
+void rec_dir(const int arg[4], char *path);
+void log_write(FILE* log, int act, char *description);
 
-static int arg[4];
-static int hash[3];
-static int argc_s;
-static char **argv_s;
-// static char *log_name;
-static FILE *log;
 static struct timespec time1;
 
-static int n_files;
-static int n_dirs;
+static int n_files = 0;
+static int n_dirs = 0;
 
 int main(int argc, char **argv) {
   // forensic -r -h [type] -o [file] -v [file]
@@ -60,19 +39,18 @@ int main(int argc, char **argv) {
     exit(argc);
   }
 
-  argc_s = argc;
-  argv_s = argv;
-  n_files = 0;
-  n_dirs = 0;
+  int hash[3];
+  int arg[4];
+  FILE *log;
+  FILE *file;
 
   // ARGUMENTS
   getArgs(argc, argv);
 
   // HASH FLAGS
   if (arg[1])
-    getHash(argv[arg[1]]);
+    getHash(hash, argv[arg[1]]);
 
-  FILE *file;
   // OUTPUT FILE
   if (arg[2])
     file = outputf(argv[arg[2]]);
@@ -82,7 +60,7 @@ int main(int argc, char **argv) {
     char *log_name = getenv("LOGFILENAME");
     log = fopen(log_name, "w");
     if (log == NULL) {
-      log = fopen("logs.txt", "w");
+      log = fopen("logs.txt", "a");
       if (log == NULL)
         exit(-1);
     }
@@ -95,7 +73,7 @@ int main(int argc, char **argv) {
       strcat(command, argv[i]);
     }
 
-    log_write(COMMAND_LOG, command);
+    log_write(log, COMMAND_LOG, command);
   }
 
   // FORESINC
@@ -110,7 +88,7 @@ int main(int argc, char **argv) {
   }
 
   if (isDir(file_name)) {
-    dir_info(file_name);
+    dir_info(log, arg, file_name);
   } else {
     file_info(file_name, basename(file_name));
   }
@@ -126,13 +104,14 @@ int main(int argc, char **argv) {
   // WAIT FOR CHILD PROCESSES TO END
   pid_t wait_pid;
   do {
-    wait_pid = wait(NULL); // RETURNS -1 ON ERROR AND SETS ECHILD IF NO UNWAITED CHILDREN
+    wait_pid = wait(
+        NULL); // RETURNS -1 ON ERROR AND SETS ECHILD IF NO UNWAITED CHILDREN
   } while (errno != ECHILD && wait_pid != -1);
 
   exit(0);
 }
 
-void dir_info(char *dirname) {
+void dir_info(FILE* log, const int arg[4], char *dirname) {
   DIR *dir_ptr = opendir(dirname);
   struct dirent *dirent;
 
@@ -155,13 +134,14 @@ void dir_info(char *dirname) {
           // IF FILE
           if (!isDir(filename)) {
             n_files++;
-            log_write(FILE_LOG, dirent->d_name);
+            log_write(log, FILE_LOG, dirent->d_name);
             file_info(filename, dirent->d_name);
 
             // IF DIR
           } else if (arg[0]) {
             n_dirs++;
-            dprintf(STDERR_FILENO, "New dir: %d/%d dir/files at this time.\n", n_dirs, n_files);
+            dprintf(STDERR_FILENO, "New dir: %d/%d dir/files at this time.\n",
+                    n_dirs, n_files);
             rec_dir(filename);
           }
           free(filename);
@@ -249,7 +229,7 @@ void file_info(char *filename, char *d_name) {
   dprintf(STDOUT_FILENO, "%s\n", final);
 }
 
-void getArgs(int argc, char **argv) {
+void getArgs(int arg[4], int argc, char **argv) {
   // index indicates tag, value indicates index of aditional argument
   //    -r -h -o -v
   //     0  1  2  3
@@ -270,7 +250,7 @@ void getArgs(int argc, char **argv) {
   }
 }
 
-void getHash(char *type) {
+void getHash(int hash[3], char *type) {
   size_t len = strlen(type);
   char tmp[10];
   char *tmp2;
@@ -308,7 +288,7 @@ FILE *outputf(char *filename) {
   return file;
 }
 
-void rec_dir(char *path) {
+void rec_dir(const int arg[4], char *path) {
   pid_t pid;
 
   pid = fork();
@@ -316,7 +296,7 @@ void rec_dir(char *path) {
   if (pid > 0) {
     return;
   } else if (pid == 0) {
-    dir_info(path);
+    dir_info(arg, path);
     exit(0);
   } else {
     printf("failed fork\n");
@@ -324,7 +304,7 @@ void rec_dir(char *path) {
   }
 }
 
-void log_write(int act, char *description) {
+void log_write(FILE* log, int act, char *description) {
   char msg[300];
 
   // TIME OF LOG
