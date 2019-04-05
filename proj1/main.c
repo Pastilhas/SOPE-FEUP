@@ -319,7 +319,8 @@ void log_write(int act, char *description) {
   int pid = (int)getpid();
 
   char *pidstr = (char *)malloc(9);
-  char *numbstr = itoa(pid);
+  char numbstr[20];
+  sprintf(numbstr, "%d", pid);
 
   strcpy(pidstr, numbstr);
 
