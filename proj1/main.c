@@ -42,6 +42,9 @@ static char **argv_s;
 static FILE *log;
 static struct timespec time1;
 
+static int n_files;
+static int n_dirs;
+
 int main(int argc, char **argv) {
   // forensic -r -h [type] -o [file] -v [file]
 
@@ -59,6 +62,8 @@ int main(int argc, char **argv) {
 
   argc_s = argc;
   argv_s = argv;
+  n_files = 0;
+  n_dirs = 0;
 
   // ARGUMENTS
   getArgs(argc, argv);
@@ -149,13 +154,14 @@ void dir_info(char *dirname) {
 
           // IF FILE
           if (!isDir(filename)) {
-            // dprintf(STDERR_FILENO, "New file found: %s \n", filename);
+            n_files++;
             log_write(FILE_LOG, dirent->d_name);
             file_info(filename, dirent->d_name);
 
             // IF DIR
           } else if (arg[0]) {
-            dprintf(STDERR_FILENO, "New dir found %s \n", filename);
+            n_dirs++;
+            dprintf(STDERR_FILENO, "New dir: %d/%d dir/files at this time", n_dirs, n_files);
             rec_dir(filename);
           }
           free(filename);
