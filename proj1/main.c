@@ -11,29 +11,34 @@
 
 #include "getters.h"
 
-void dir_info(const int arg[4], char *dirname);
-void file_info(char *filename, char *d_name);
+void dir_info(FILE *log, const int arg[4], const int hash[3], char *dirname);
+void file_info(const int arg[4], const int hash[3], char *filename, char *d_name);
 void getArgs(int arg[4], int argc, char **argv);
 void getHash(int hash[3], char *type);
 FILE *outputf(char *filename);
-void rec_dir(const int arg[4], char *path);
-void log_write(FILE* log, int act, char *description);
+void rec_dir(FILE *log, const int arg[4], const int hash[3], char *path);
+void log_write(FILE *log, int act, char *description);
 
 static struct timespec time1;
 
 static int n_files = 0;
 static int n_dirs = 0;
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
   // forensic -r -h [type] -o [file] -v [file]
 
   // START OF TIME
   clock_gettime(CLOCK_MONOTONIC_RAW, &time1);
 
-  if (argc < 2 || argc > 8) {
-    if (argc < 2) {
+  if (argc < 2 || argc > 8)
+  {
+    if (argc < 2)
+    {
       dprintf(STDERR_FILENO, "Not enough arguments.\n");
-    } else {
+    }
+    else
+    {
       dprintf(STDERR_FILENO, "Too many arguments.\n");
     }
     exit(argc);
@@ -45,7 +50,7 @@ int main(int argc, char **argv) {
   FILE *file;
 
   // ARGUMENTS
-  getArgs(argc, argv);
+  getArgs(arg, argc, argv);
 
   // HASH FLAGS
   if (arg[1])
@@ -56,10 +61,12 @@ int main(int argc, char **argv) {
     file = outputf(argv[arg[2]]);
 
   // LOG FILE
-  if (arg[3]) {
+  if (arg[3])
+  {
     char *log_name = getenv("LOGFILENAME");
     log = fopen(log_name, "w");
-    if (log == NULL) {
+    if (log == NULL)
+    {
       log = fopen("logs.txt", "a");
       if (log == NULL)
         exit(-1);
@@ -68,29 +75,36 @@ int main(int argc, char **argv) {
     char command[100];
 
     strcat(command, argv[0]);
-    for (int i = 1; i < argc; i++) {
+    for (int i = 1; i < argc; i++)
+    {
       strcat(command, " ");
       strcat(command, argv[i]);
     }
-
-    log_write(log, COMMAND_LOG, command);
+    if (arg[3])
+      log_write(log, COMMAND_LOG, command);
   }
 
   // FORESINC
   char *file_name;
-  if (isRoot(argv[argc - 1])) {
+  if (isRoot(argv[argc - 1]))
+  {
     file_name = (char *)malloc(strlen(argv[argc - 1]) + 1);
     strcpy(file_name, argv[argc - 1]);
-  } else {
+  }
+  else
+  {
     file_name = (char *)malloc(strlen(argv[argc - 1]) + 3);
     strcpy(file_name, "./");
     strcat(file_name, argv[argc - 1]);
   }
 
-  if (isDir(file_name)) {
-    dir_info(log, arg, file_name);
-  } else {
-    file_info(file_name, basename(file_name));
+  if (isDir(file_name))
+  {
+    dir_info(log, arg, hash, file_name);
+  }
+  else
+  {
+    file_info(arg, hash, file_name, basename(file_name));
   }
 
   if (file)
@@ -103,7 +117,8 @@ int main(int argc, char **argv) {
 
   // WAIT FOR CHILD PROCESSES TO END
   pid_t wait_pid;
-  do {
+  do
+  {
     wait_pid = wait(
         NULL); // RETURNS -1 ON ERROR AND SETS ECHILD IF NO UNWAITED CHILDREN
   } while (errno != ECHILD && wait_pid != -1);
@@ -111,41 +126,54 @@ int main(int argc, char **argv) {
   exit(0);
 }
 
-void dir_info(FILE* log, const int arg[4], char *dirname) {
+void dir_info(FILE *log, const int arg[4], const int hash[3], char *dirname)
+{
   DIR *dir_ptr = opendir(dirname);
   struct dirent *dirent;
 
-  if (dir_ptr == NULL) {
+  if (dir_ptr == NULL)
+  {
     dprintf(STDERR_FILENO, "Cannot open.\n");
-  } else {
+  }
+  else
+  {
     dirent = readdir(dir_ptr);
-    while (dirent != NULL) {
-      if (dirent->d_name[0] != '.') {
+    while (dirent != NULL)
+    {
+      if (dirent->d_name[0] != '.')
+      {
         char *filename =
             (char *)malloc(strlen(dirname) + strlen(dirent->d_name) + 2);
 
         // NEW ENTRY
-        if (filename != NULL) {
+        if (filename != NULL)
+        {
           strcpy(filename, dirname);
           if (dirname[strlen(dirname) - 1] != '/')
             strcat(filename, "/");
           strcat(filename, dirent->d_name);
 
           // IF FILE
-          if (!isDir(filename)) {
+          if (!isDir(filename))
+          {
             n_files++;
-            log_write(log, FILE_LOG, dirent->d_name);
-            file_info(filename, dirent->d_name);
+            if (arg[3])
+              log_write(log, FILE_LOG, dirent->d_name);
+            file_info(arg, hash, filename, dirent->d_name);
 
             // IF DIR
-          } else if (arg[0]) {
+          }
+          else if (arg[0])
+          {
             n_dirs++;
             dprintf(STDERR_FILENO, "New dir: %d/%d dir/files at this time.\n",
                     n_dirs, n_files);
-            rec_dir(filename);
+            rec_dir(log, arg, hash, filename);
           }
           free(filename);
-        } else {
+        }
+        else
+        {
           dprintf(STDERR_FILENO, "Failed to create file path.\n");
           exit(-1);
         }
@@ -158,7 +186,8 @@ void dir_info(FILE* log, const int arg[4], char *dirname) {
   closedir(dir_ptr);
 }
 
-void file_info(char *filename, char *d_name) {
+void file_info(const int arg[4], const int hash[3], char *filename, char *d_name)
+{
   struct stat info;
   get_stat(&info, filename, d_name);
   char final[200];
@@ -201,8 +230,10 @@ void file_info(char *filename, char *d_name) {
   free(mod_time);
 
   // HASH
-  if (arg[1]) {
-    if (hash[0]) { // MD5
+  if (arg[1])
+  {
+    if (hash[0])
+    { // MD5
       char *md5;
       md5 = getMD5(filename);
       strcat(final, ",");
@@ -210,7 +241,8 @@ void file_info(char *filename, char *d_name) {
       free(md5);
     }
 
-    if (hash[1]) { // SHA1
+    if (hash[1])
+    { // SHA1
       char *sha1;
       sha1 = getSHA1(filename);
       strcat(final, ",");
@@ -218,7 +250,8 @@ void file_info(char *filename, char *d_name) {
       free(sha1);
     }
 
-    if (hash[2]) { // SHA256
+    if (hash[2])
+    { // SHA256
       char *sha256;
       sha256 = getSHA256(filename);
       strcat(final, ",");
@@ -229,36 +262,48 @@ void file_info(char *filename, char *d_name) {
   dprintf(STDOUT_FILENO, "%s\n", final);
 }
 
-void getArgs(int arg[4], int argc, char **argv) {
+void getArgs(int arg[4], int argc, char **argv)
+{
   // index indicates tag, value indicates index of aditional argument
   //    -r -h -o -v
   //     0  1  2  3
 
-  for (int i = 0; i < argc; i++) {
+  for (int i = 0; i < argc; i++)
+  {
     char *ar = argv[i];
-    if (strcmp(ar, "-r") == 0) {
+    if (strcmp(ar, "-r") == 0)
+    {
       arg[0] = 1;
-    } else if (strcmp(ar, "-h") == 0) {
+    }
+    else if (strcmp(ar, "-h") == 0)
+    {
       arg[1] = i + 1;
       i++;
-    } else if (strcmp(ar, "-o") == 0) {
+    }
+    else if (strcmp(ar, "-o") == 0)
+    {
       arg[2] = i + 1;
       i++;
-    } else if (strcmp(ar, "-v") == 0) {
+    }
+    else if (strcmp(ar, "-v") == 0)
+    {
       arg[3] = 1;
     }
   }
 }
 
-void getHash(int hash[3], char *type) {
+void getHash(int hash[3], char *type)
+{
   size_t len = strlen(type);
   char tmp[10];
   char *tmp2;
   int size = 0;
   int i = 0;
 
-  while ((unsigned)i <= len) {
-    if (type[i] == ',' || type[i] == '\0') {
+  while ((unsigned)i <= len)
+  {
+    if (type[i] == ',' || type[i] == '\0')
+    {
       size++;
       tmp2 = (char *)malloc(size * sizeof(char));
       memset(tmp2, '\0', size * sizeof(char));
@@ -272,7 +317,9 @@ void getHash(int hash[3], char *type) {
       free(tmp2);
       size = 0;
       memset(tmp, '\0', 10);
-    } else {
+    }
+    else
+    {
       tmp[size] = type[i];
       size++;
     }
@@ -280,7 +327,8 @@ void getHash(int hash[3], char *type) {
   }
 }
 
-FILE *outputf(char *filename) {
+FILE *outputf(char *filename)
+{
   FILE *file = fopen(filename, "w+");
   if (file == NULL)
     exit(-3);
@@ -288,31 +336,38 @@ FILE *outputf(char *filename) {
   return file;
 }
 
-void rec_dir(const int arg[4], char *path) {
+void rec_dir(FILE *log, const int arg[4], const int hash[3], char *path)
+{
   pid_t pid;
 
   pid = fork();
 
-  if (pid > 0) {
+  if (pid > 0)
+  {
     return;
-  } else if (pid == 0) {
-    dir_info(arg, path);
+  }
+  else if (pid == 0)
+  {
+    dir_info(log, arg, hash, path);
     exit(0);
-  } else {
+  }
+  else
+  {
     printf("failed fork\n");
     exit(-2);
   }
 }
 
-void log_write(FILE* log, int act, char *description) {
+void log_write(FILE *log, int act, char *description)
+{
   char msg[300];
 
   // TIME OF LOG
   struct timespec time2;
   clock_gettime(CLOCK_MONOTONIC_RAW, &time2);
-  double timediff =
-      ((double)time2.tv_sec - (double)time1.tv_sec +
-       ((double)time2.tv_nsec - (double)time1.tv_nsec) / 1000000000);
+  double timediff = (((double)time2.tv_sec - (double)time1.tv_sec) * 1000000 +
+                     ((double)time2.tv_nsec - (double)time1.tv_nsec) / 1000) /
+                    1000;
 
   // PID OF PROCESS
   int pid = (int)getpid();
