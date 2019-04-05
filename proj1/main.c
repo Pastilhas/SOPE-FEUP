@@ -161,7 +161,7 @@ void dir_info(char *dirname) {
             // IF DIR
           } else if (arg[0]) {
             n_dirs++;
-            dprintf(STDERR_FILENO, "New dir: %d/%d dir/files at this time", n_dirs, n_files);
+            dprintf(STDERR_FILENO, "New dir: %d/%d dir/files at this time.\n", n_dirs, n_files);
             rec_dir(filename);
           }
           free(filename);
