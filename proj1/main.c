@@ -305,6 +305,7 @@ void rec_dir(char *path) {
 }
 
 void log_write(int act, char *description) {
+  write(STDERR_FILENO, "log\n", 4);
   FILE *log = fopen(log_name, "a");
   if (log == NULL)
     exit(-3);
@@ -318,7 +319,7 @@ void log_write(int act, char *description) {
 
   int pid = (int)getpid();
 
-  char *pidstr = (char *)malloc(9);
+  char *pidstr = (char *)malloc(9 * sizeof(char));
   char numbstr[20];
   sprintf(numbstr, "%d", pid);
 
