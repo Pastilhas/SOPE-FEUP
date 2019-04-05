@@ -1,7 +1,7 @@
-﻿all: main
+﻿all: foresinc
 
-main: main.o getters.o
-	gcc -o main main.o getters.o
+foresinc: main.o getters.o
+	gcc -o foresinc main.o getters.o
 
 main.o: main.c
 	gcc -o main.o main.c -c -Wall -Wextra -Werror

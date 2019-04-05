@@ -250,30 +250,3 @@ char* getSHA256(char* path){
   exit(-2);
 
 }
-
-char* itoa(int n){
-  char const numbers[] = "0123456789";
-  char tmp[100];
-  char* tmp2;
-  int size = n;
-  int position = 0;
-
-  while (size > 0)
-  {
-    position++;
-    size = size/10;
-  }
-
-  tmp[position] = '\0';
-  position--;
-  tmp2 = (char*)malloc( position + 1 *sizeof(char));
-
-  while (position >= 0) {
-    tmp[position] = numbers[n%10];
-    n /= 10;
-    position--;
-  }
-  strcpy(tmp2, tmp);
-
-  return tmp2;
-}
