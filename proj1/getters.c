@@ -1,37 +1,37 @@
 #include "getters.h"
 
-void get_stat(struct stat* info, char* filename, char* d_name) {
+void get_stat(struct stat *info, char *filename, char *d_name) {
   if (stat(filename, info)) {
     perror(d_name);
   }
 }
 
-int isRoot(char* line) {
+int isRoot(char *line) {
   if (line[0] == '/' || line[0] == '~')
     return 1;
   return 0;
 }
 
-int isDir(char* line) {
+int isDir(char *line) {
   struct stat info;
   get_stat(&info, line, line);
 
   return S_ISDIR(info.st_mode);
 }
 
-char* getAccess(mode_t mode) {
-  char* access = (char*)malloc(4*sizeof(char));
+char *getAccess(mode_t mode) {
+  char *access = (char *)malloc(4 * sizeof(char));
   access[0] = (mode & S_IRUSR) ? 'r' : '-';
   access[1] = (mode & S_IWUSR) ? 'w' : '-';
   access[2] = (mode & S_IXUSR) ? 'x' : '-';
   return access;
 }
 
-void getDate(char* str, time_t date) {
+void getDate(char *str, time_t date) {
   strftime(str, 20, "%Y-%m-%dT%H:%M:%S", localtime(&date));
 }
 
-char* getFileType(char* path) {
+char *getFileType(char *path) {
   int fd[2];
   int n;
   pid_t pid;
@@ -47,7 +47,7 @@ char* getFileType(char* path) {
     char tmp2[100];
     int i = 0;
     int length = 0;
-    char* type;
+    char *type;
 
     if ((n = read(fd[READ], tmp, 100)) < 0) {
       printf("fail to read %d\n", n);
@@ -66,8 +66,8 @@ char* getFileType(char* path) {
       i++;
     }
 
-    type = (char*)malloc(length * sizeof(char));
-    memset(type, '\0', length*sizeof(char));
+    type = (char *)malloc(length * sizeof(char));
+    memset(type, '\0', length * sizeof(char));
     strcpy(type, tmp2);
     return type;
   } else if (pid == 0) {
@@ -86,7 +86,7 @@ char* getFileType(char* path) {
   exit(-2);
 }
 
-char* getMD5(char* path){
+char *getMD5(char *path) {
   int fd[2];
   int n;
   pid_t pid;
@@ -102,7 +102,7 @@ char* getMD5(char* path){
     char tmp2[100];
     int i;
     int length = 0;
-    char* type;
+    char *type;
 
     if ((n = read(fd[READ], tmp, 100)) < 0) {
       printf("fail to read %d\n", n);
@@ -120,8 +120,8 @@ char* getMD5(char* path){
       }
     }
 
-    type = (char*)malloc(length * sizeof(char));
-    memset(type, '\0', length*sizeof(char));
+    type = (char *)malloc(length * sizeof(char));
+    memset(type, '\0', length * sizeof(char));
     strcpy(type, tmp2);
     return type;
   } else if (pid == 0) {
@@ -138,10 +138,9 @@ char* getMD5(char* path){
     exit(-2);
   }
   exit(-2);
-
 }
 
-char* getSHA1(char* path){
+char *getSHA1(char *path) {
   int fd[2];
   int n;
   pid_t pid;
@@ -157,7 +156,7 @@ char* getSHA1(char* path){
     char tmp2[100];
     int i;
     int length = 0;
-    char* type;
+    char *type;
 
     if ((n = read(fd[READ], tmp, 100)) < 0) {
       printf("fail to read %d\n", n);
@@ -175,8 +174,8 @@ char* getSHA1(char* path){
       }
     }
 
-    type = (char*)malloc(length * sizeof(char));
-    memset(type, '\0', length*sizeof(char));
+    type = (char *)malloc(length * sizeof(char));
+    memset(type, '\0', length * sizeof(char));
     strcpy(type, tmp2);
     return type;
   } else if (pid == 0) {
@@ -193,10 +192,9 @@ char* getSHA1(char* path){
     exit(-2);
   }
   exit(-2);
-
 }
 
-char* getSHA256(char* path){
+char *getSHA256(char *path) {
   int fd[2];
   int n;
   pid_t pid;
@@ -212,7 +210,7 @@ char* getSHA256(char* path){
     char tmp2[100];
     int i;
     int length = 0;
-    char* type;
+    char *type;
 
     if ((n = read(fd[READ], tmp, 100)) < 0) {
       printf("fail to read %d\n", n);
@@ -230,8 +228,8 @@ char* getSHA256(char* path){
       }
     }
 
-    type = (char*)malloc(length * sizeof(char));
-    memset(type, '\0', length*sizeof(char));
+    type = (char *)malloc(length * sizeof(char));
+    memset(type, '\0', length * sizeof(char));
     strcpy(type, tmp2);
     return type;
   } else if (pid == 0) {
@@ -248,5 +246,4 @@ char* getSHA256(char* path){
     exit(-2);
   }
   exit(-2);
-
 }

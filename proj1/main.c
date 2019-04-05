@@ -118,6 +118,7 @@ int main(int argc, char **argv) {
 
   free(file_name);
 
+  // WAIT FOR CHILD PROCESSES TO END
   pid_t wait_pid;
   do {
     wait_pid = wait(NULL); // RETURNS -1 ON ERROR AND SETS ECHILD IF NO UNWAITED CHILDREN
@@ -337,6 +338,7 @@ void log_write(int act, char *description) {
   else if (act == FILE_LOG)
     strcpy(action, "ANALIZED");
 
-  sprintf(msg, "%.2f - %d - %s  %s", timediff, pid, action, description);
-  fprintf(log, "%s\n", msg);
+  sprintf(msg, "%.2f - %d - %s  %s\n", timediff, pid, action, description);
+  fprintf(log, "%s", msg);
+  fflush(NULL);
 }
