@@ -78,6 +78,8 @@ int main(int argc, char **argv) {
     log = fopen(log_name, "w");
     if (log == NULL) {
       log = fopen("logs.txt", "w");
+      if (log == NULL)
+        exit(-1);
     }
 
     char command[100];
@@ -115,6 +117,12 @@ int main(int argc, char **argv) {
     fclose(log);
 
   free(file_name);
+
+  pid_t wait_pid;
+  do {
+    wait_pid = wait(NULL); // RETURNS -1 ON ERROR AND SETS ECHILD IF NO UNWAITED CHILDREN
+  } while (errno != ECHILD && wait_pid != -1);
+
   exit(0);
 }
 
@@ -310,7 +318,6 @@ void rec_dir(char *path) {
 }
 
 void log_write(int act, char *description) {
-  dprintf(STDERR_FILENO, "log.\n");
   char msg[300];
 
   // TIME OF LOG
