@@ -23,21 +23,29 @@
 
 #include "getters.h"
 
+#define FILE_LOG 0
+#define DIR_LOG 1
+#define COMMAND_LOG 2
+
 void dir_info(char *dirname);
 void file_info(char *filename, char *d_name);
 void getArgs(int argc, char **argv);
 void getHash(char *type);
 FILE *outputf(char *filename);
 void rec_dir(char *path);
+void log_write(int act, char *description);
 
 static int arg[4];
 static int hash[3];
 static int argc_s;
 static char **argv_s;
+static char *log_name;
+static struct timespec time1;
 
 int main(int argc, char **argv)
 {
   // forensic -r -h [type] -o [file] -v [file]
+  clock_gettime(CLOCK_MONOTONIC_RAW, &time1);
 
   if (argc < 2 || argc > 8)
   {
@@ -69,7 +77,23 @@ int main(int argc, char **argv)
 
   if (arg[3])
   {
-    // char* log_name = getenv("LOGFILENAME");
+    log_name = getenv("LOGFILENAME");
+    FILE *log = fopen(log_name, "w");
+    fclose(log);
+    int logmsgsize = 0;
+    for (int i = 0; i < argc; i++)
+    {
+      logmsgsize += (strlen(argv[i]) + 1);
+    }
+    char *logmsg = (char *)malloc(logmsgsize + 1);
+
+    for (int i = 0; i < argc; i++)
+    {
+      strcat(logmsg, argv[i]);
+      strcat(logmsg, " ");
+    }
+    log_write(COMMAND_LOG, logmsg);
+    free(logmsg);
   }
   char *file_name;
 
@@ -95,7 +119,10 @@ int main(int argc, char **argv)
   }
 
   if (arg[2])
+  {
     fclose(file);
+    free(file_name);
+  }
 
   exit(0);
 }
@@ -152,6 +179,7 @@ void dir_info(char *dirname)
       dirent = readdir(dir_ptr);
     }
   }
+  log_write(DIR_LOG, dirname);
 
   closedir(dir_ptr);
 }
@@ -180,7 +208,7 @@ void file_info(char *filename, char *d_name)
   strcat(final, size_str);
 
   // ACCESS
-  char* access = getAccess(info.st_mode);
+  char *access = getAccess(info.st_mode);
   strcat(final, ",");
   strcat(final, access);
   free(access);
@@ -230,6 +258,7 @@ void file_info(char *filename, char *d_name)
     }
   }
   dprintf(STDOUT_FILENO, "%s\n", final);
+  log_write(FILE_LOG, d_name);
 }
 
 void getArgs(int argc, char **argv)
@@ -326,4 +355,43 @@ void rec_dir(char *path)
     printf("failed fork\n");
     exit(-2);
   }
+}
+
+void log_write(int act, char *description)
+{
+  FILE *log = fopen(log_name, "a");
+  if (log == NULL)  
+    exit(-3);
+
+  struct timespec time2;
+  clock_gettime(CLOCK_MONOTONIC_RAW, &time2);
+
+  double timediff = (((double)time2.tv_sec - (double)time1.tv_sec) * 1000000 + ((double)time2.tv_nsec - (double)time1.tv_nsec) / 1000) / 1000;
+
+  int pid = (int)getpid();
+
+  char *pidstr = (char *)malloc(9);
+  char *numbstr = itoa(pid);  
+
+  strcpy(pidstr, numbstr);
+
+  while (strlen(pidstr) < 8) {
+    strcat(pidstr, " ");
+  }
+
+  fprintf(log, "%.2f - %s - ", timediff, pidstr);
+  free(pidstr);
+
+  if (act == COMMAND_LOG)
+    fprintf(log, "%s", "COMMAND ");
+
+  else if (act == FILE_LOG)
+    fprintf(log, "%s", "ANALIZED ");
+
+  else if (act == DIR_LOG)
+    fprintf(log, "%s", "ANALYZING ");
+
+  fprintf(log, "%s\n", description);
+
+  fclose(log);
 }
